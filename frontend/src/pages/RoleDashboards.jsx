@@ -169,7 +169,9 @@ export const ProviderDashboard = () => {
     duration: '',
     price: '',
     quota: '',
-    image_url: ''
+    image_url: '',
+    latitude: '',
+    longitude: ''
   })
   const [uploading, setUploading] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -254,7 +256,9 @@ export const ProviderDashboard = () => {
         duration: '',
         price: '',
         quota: '',
-        image_url: ''
+        image_url: '',
+        latitude: '',
+        longitude: ''
       })
       fetchData()
     } catch (err) {
@@ -271,7 +275,9 @@ export const ProviderDashboard = () => {
       duration: pkg.duration,
       price: pkg.price,
       quota: pkg.quota,
-      image_url: pkg.image_url
+      image_url: pkg.image_url,
+      latitude: pkg.latitude || '',
+      longitude: pkg.longitude || ''
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -413,6 +419,17 @@ export const ProviderDashboard = () => {
               <label style={{ display: 'block', marginBottom: '0.5rem' }}>Deskripsi</label>
               <textarea name="description" value={formData.description} onChange={handleInputChange} rows="4" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}></textarea>
             </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Latitude</label>
+                <input type="number" step="any" name="latitude" value={formData.latitude} onChange={handleInputChange} placeholder="e.g. -7.7956" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Longitude</label>
+                <input type="number" step="any" name="longitude" value={formData.longitude} onChange={handleInputChange} placeholder="e.g. 110.3695" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              </div>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '1rem' }}>* Opsional, digunakan untuk menampilkan cuaca destinasi.</p>
             <div style={{ marginBottom: '1.5rem' }}>
               <label style={{ display: 'block', marginBottom: '0.5rem' }}>Gambar Paket</label>
               <input type="file" onChange={handleFileUpload} accept="image/*" style={{ marginBottom: '0.5rem' }} />

@@ -33,6 +33,8 @@ Aplikasi akan berjalan di [http://localhost:5173](http://localhost:5173) (atau p
 - **Landing Page**: Informasi umum tentang ArahLoka.
 - **Paket Budaya**: Menampilkan daftar paket wisata budaya dari database SQLite.
 - **Health Check**: Endpoint API untuk memverifikasi status backend.
+- **Integrasi Cuaca**: Informasi cuaca real-time untuk setiap paket wisata menggunakan Open-Meteo API.
+- **Sistem Booking**: Alur lengkap untuk turis memesan paket dan penyedia jasa menyetujuinya.
 
 ## Teknologi
 

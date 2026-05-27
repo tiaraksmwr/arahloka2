@@ -69,6 +69,8 @@ function initializeDatabase() {
       price INTEGER,
       quota INTEGER,
       image_url TEXT,
+      latitude REAL,
+      longitude REAL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -96,6 +98,19 @@ function initializeDatabase() {
       if (!columnNames.includes('quota')) {
         db.run("ALTER TABLE packages ADD COLUMN quota INTEGER DEFAULT 0");
       }
+      if (!columnNames.includes('latitude')) {
+        db.run("ALTER TABLE packages ADD COLUMN latitude REAL");
+      }
+      if (!columnNames.includes('longitude')) {
+        db.run("ALTER TABLE packages ADD COLUMN longitude REAL");
+      }
+
+      // Update coordinates for existing dummy packages
+      db.run("UPDATE packages SET latitude = -7.7956, longitude = 110.3695 WHERE title = 'Eksplorasi Budaya Yogyakarta' AND latitude IS NULL");
+      db.run("UPDATE packages SET latitude = -8.5069, longitude = 115.2625 WHERE title = 'Bali Culture & Tradition' AND latitude IS NULL");
+      db.run("UPDATE packages SET latitude = -8.4240, longitude = 115.3593 WHERE title = 'Desa Penglipuran Experience' AND latitude IS NULL");
+      db.run("UPDATE packages SET latitude = -2.9700, longitude = 119.9000 WHERE title = 'Toraja Heritage Journey' AND latitude IS NULL");
+      db.run("UPDATE packages SET latitude = -7.6079, longitude = 110.2038 WHERE title = 'Borobudur Sunrise Culture' AND latitude IS NULL");
     });
 
     // Seed superadmin if not exists
@@ -131,7 +146,9 @@ function seedDatabase() {
       duration: '3 Hari 2 Malam',
       price: 2500000,
       quota: 15,
-      image_url: 'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?auto=format&fit=crop&q=80&w=800'
+      image_url: 'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?auto=format&fit=crop&q=80&w=800',
+      latitude: -7.7956,
+      longitude: 110.3695
     },
     {
       title: 'Bali Culture & Tradition',
@@ -140,7 +157,9 @@ function seedDatabase() {
       duration: '4 Hari 3 Malam',
       price: 3800000,
       quota: 10,
-      image_url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=800'
+      image_url: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=800',
+      latitude: -8.5069,
+      longitude: 115.2625
     },
     {
       title: 'Desa Penglipuran Experience',
@@ -149,7 +168,9 @@ function seedDatabase() {
       duration: '1 Hari',
       price: 750000,
       quota: 20,
-      image_url: 'https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&q=80&w=800'
+      image_url: 'https://images.unsplash.com/photo-1552733407-5d5c46c3bb3b?auto=format&fit=crop&q=80&w=800',
+      latitude: -8.4240,
+      longitude: 115.3593
     },
     {
       title: 'Toraja Heritage Journey',
@@ -158,7 +179,9 @@ function seedDatabase() {
       duration: '5 Hari 4 Malam',
       price: 4500000,
       quota: 8,
-      image_url: 'https://images.unsplash.com/photo-1621350614838-84241316f06a?auto=format&fit=crop&q=80&w=800'
+      image_url: 'https://images.unsplash.com/photo-1621350614838-84241316f06a?auto=format&fit=crop&q=80&w=800',
+      latitude: -2.9700,
+      longitude: 119.9000
     },
     {
       title: 'Borobudur Sunrise Culture',
@@ -167,13 +190,15 @@ function seedDatabase() {
       duration: '2 Hari 1 Malam',
       price: 1800000,
       quota: 12,
-      image_url: 'https://images.unsplash.com/photo-1596402184320-417d7178b2cd?auto=format&fit=crop&q=80&w=800'
+      image_url: 'https://images.unsplash.com/photo-1596402184320-417d7178b2cd?auto=format&fit=crop&q=80&w=800',
+      latitude: -7.6079,
+      longitude: 110.2038
     }
   ];
 
-  const stmt = db.prepare(`INSERT INTO packages (title, location, description, duration, price, quota, image_url) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+  const stmt = db.prepare(`INSERT INTO packages (title, location, description, duration, price, quota, image_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
   packages.forEach((pkg) => {
-    stmt.run(pkg.title, pkg.location, pkg.description, pkg.duration, pkg.price, pkg.quota, pkg.image_url);
+    stmt.run(pkg.title, pkg.location, pkg.description, pkg.duration, pkg.price, pkg.quota, pkg.image_url, pkg.latitude, pkg.longitude);
   });
   stmt.finalize();
   console.log('Database seeded with dummy packages.');
@@ -314,10 +339,10 @@ app.get('/api/provider/packages', authMiddleware, roleMiddleware(['travel_provid
 });
 
 app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
-  const { title, location, description, duration, price, quota, image_url } = req.body;
+  const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
   db.run(
-    "INSERT INTO packages (provider_id, title, location, description, duration, price, quota, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-    [req.user.id, title, location, description, duration, price, quota, image_url],
+    "INSERT INTO packages (provider_id, title, location, description, duration, price, quota, image_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [req.user.id, title, location, description, duration, price, quota, image_url, latitude, longitude],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.status(201).json({ id: this.lastID, message: 'Package created successfully' });
@@ -326,10 +351,10 @@ app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (
 });
 
 app.put('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
-  const { title, location, description, duration, price, quota, image_url } = req.body;
+  const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
   db.run(
-    "UPDATE packages SET title = ?, location = ?, description = ?, duration = ?, price = ?, quota = ?, image_url = ? WHERE id = ? AND provider_id = ?",
-    [title, location, description, duration, price, quota, image_url, req.params.id, req.user.id],
+    "UPDATE packages SET title = ?, location = ?, description = ?, duration = ?, price = ?, quota = ?, image_url = ?, latitude = ?, longitude = ? WHERE id = ? AND provider_id = ?",
+    [title, location, description, duration, price, quota, image_url, latitude, longitude, req.params.id, req.user.id],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ message: 'Package not found or unauthorized' });
@@ -452,6 +477,54 @@ app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({ image_url: imageUrl });
+});
+
+// Weather Route
+app.get('/api/weather', async (req, res) => {
+  const { lat, lon } = req.query;
+  if (!lat || !lon) {
+    return res.status(400).json({ message: 'Latitude and longitude are required' });
+  }
+
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Weather API response not ok');
+    const data = await response.json();
+    
+    const weatherCodes = {
+      0: 'Cerah',
+      1: 'Cerah Berawan',
+      2: 'Berawan',
+      3: 'Mendung',
+      45: 'Berkabut',
+      48: 'Kabut Berembun',
+      51: 'Gerimis Ringan',
+      53: 'Gerimis Sedang',
+      55: 'Gerimis Lebat',
+      61: 'Hujan Ringan',
+      63: 'Hujan Sedang',
+      65: 'Hujan Lebat',
+      80: 'Hujan Showers Ringan',
+      81: 'Hujan Showers Sedang',
+      82: 'Hujan Showers Lebat',
+      95: 'Badai Petir'
+    };
+
+    const current = data.current_weather;
+    res.json({
+      temperature: current.temperature,
+      condition: weatherCodes[current.weathercode] || 'Tidak Diketahui',
+      windspeed: current.windspeed,
+      latitude: lat,
+      longitude: lon,
+      unit: data.current_weather_units?.temperature || '°C'
+    });
+  } catch (err) {
+    console.error('Weather API Error:', err.message);
+    res.status(500).json({ message: 'Gagal mengambil data cuaca' });
+  }
 });
 
 app.listen(PORT, () => {

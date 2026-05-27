@@ -13,6 +13,8 @@ const PackageDetail = () => {
     notes: ''
   })
   const [submitting, setSubmitting] = useState(false)
+  const [weather, setWeather] = useState(null)
+  const [weatherLoading, setWeatherLoading] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
@@ -21,6 +23,9 @@ const PackageDetail = () => {
         const response = await axios.get(`${import.meta.env.VITE_API_URL}/packages/${id}`)
         setPkg(response.data)
         setLoading(false)
+        if (response.data.latitude && response.data.longitude) {
+          fetchWeather(response.data.latitude, response.data.longitude)
+        }
       } catch (err) {
         console.error('Error fetching package:', err)
         setLoading(false)
@@ -28,6 +33,18 @@ const PackageDetail = () => {
     }
     fetchPackage()
   }, [id])
+
+  const fetchWeather = async (lat, lon) => {
+    setWeatherLoading(true)
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/weather?lat=${lat}&lon=${lon}`)
+      setWeather(response.data)
+    } catch (err) {
+      console.error('Error fetching weather:', err)
+    } finally {
+      setWeatherLoading(false)
+    }
+  }
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault()
@@ -104,10 +121,35 @@ const PackageDetail = () => {
                 <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.2rem' }}>KUOTA</p>
                 <p style={{ fontWeight: 'bold' }}>{pkg.quota} Peserta</p>
               </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.2rem' }}>PRAKIRAAN CUACA</p>
-                <p style={{ fontWeight: 'bold' }}>☀️ Cerah, 28°C (Placeholder)</p>
-              </div>
+            </div>
+
+            <div className="weather-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '2rem', borderLeft: '4px solid var(--deep-green)' }}>
+              <h4 style={{ marginBottom: '1rem', color: 'var(--deep-green)' }}>Cuaca Destinasi</h4>
+              {weatherLoading ? (
+                <p style={{ fontSize: '0.9rem' }}>Memuat data cuaca...</p>
+              ) : weather ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                  <div>
+                    <p style={{ fontSize: '0.8rem', color: '#888' }}>TEMPERATUR</p>
+                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--burnt-orange)' }}>{weather.temperature}{weather.unit}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.8rem', color: '#888' }}>KONDISI</p>
+                    <p style={{ fontWeight: 'bold' }}>{weather.condition}</p>
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '0.8rem', color: '#888' }}>KECEPATAN ANGIN</p>
+                    <p style={{ fontWeight: 'bold' }}>{weather.windspeed} km/h</p>
+                  </div>
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.9rem', color: '#666' }}>
+                  {pkg.latitude && pkg.longitude 
+                    ? 'Gagal memuat data cuaca. Silakan coba lagi nanti.' 
+                    : 'Data cuaca belum tersedia untuk destinasi ini.'}
+                </p>
+              )}
+              <p style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '1rem' }}>Data cuaca dari Open-Meteo</p>
             </div>
 
             <div style={{ lineHeight: '1.8', color: '#444' }}>

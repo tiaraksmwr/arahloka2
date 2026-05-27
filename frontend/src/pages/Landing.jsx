@@ -56,7 +56,7 @@ function Landing() {
           </div>
           <div className="feature-card">
             <h3>Cuaca Destinasi</h3>
-            <p>Pantau kondisi cuaca untuk rencana perjalanan yang sempurna.</p>
+            <p>Pantau kondisi cuaca real-time dari Open-Meteo untuk rencana perjalanan yang sempurna.</p>
           </div>
           <div className="feature-card">
             <h3>Journey Studio</h3>
