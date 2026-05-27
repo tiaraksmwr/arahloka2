@@ -38,6 +38,23 @@ Aplikasi akan berjalan di [http://localhost:5173](http://localhost:5173) (atau p
 - **ArahLoka Trip Planner**: Perencanaan perjalanan otomatis dan checklist persiapan yang terintegrasi langsung dengan booking pengguna.
 - **Journey Studio**: Platform kreatif untuk membuat kartu kenangan (Memory Lane) dan berbagi cerita budaya (Story Challenge).
 
+## Demo Accounts
+
+Untuk keperluan pengujian, Anda dapat menggunakan akun demo berikut:
+
+### 1. Superadmin
+- **Email**: `admin@arahloka.com`
+- **Password**: `admin123`
+- **Role**: Pengelolaan user dan persetujuan provider.
+
+### 2. Travel Provider (Sudah Approved)
+- **Java Heritage Travel**: `provider@arahloka.com` / `provider123`
+- **Bali Culture Trip**: `bali@arahloka.com` / `provider123`
+- **Nusantara Culture Tour**: `nusantara@arahloka.com` / `provider123`
+
+### 3. Tourist
+- **Pendaftaran**: Turis dapat mendaftar langsung melalui halaman Register dan langsung aktif (Approved otomatis).
+
 ## Teknologi
 
 - **Frontend**: React (Vite), Plain CSS.

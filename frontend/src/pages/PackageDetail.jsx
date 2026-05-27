@@ -74,7 +74,7 @@ const PackageDetail = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      alert('Booking berhasil dikirim! Menunggu persetujuan penyedia jasa.')
+      alert(`Booking berhasil dikirim ke ${pkg.provider_name || 'penyedia jasa'} dan sedang menunggu konfirmasi. Anda dapat memantau statusnya di halaman Dashboard.`)
       navigate('/tourist')
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal melakukan booking')
@@ -115,6 +115,7 @@ const PackageDetail = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
                 <span style={{ color: 'var(--burnt-orange)', fontWeight: 'bold', fontSize: '1.1rem' }}>{pkg.location}</span>
+                {pkg.provider_name && <p style={{ fontSize: '0.9rem', color: '#888', fontStyle: 'italic', marginTop: '0.2rem' }}>Disediakan oleh {pkg.provider_name}</p>}
                 <h1 style={{ margin: '0.5rem 0', fontSize: '2.5rem' }}>{pkg.title}</h1>
               </div>
               <div style={{ textAlign: 'right' }}>

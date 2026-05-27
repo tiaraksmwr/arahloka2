@@ -167,6 +167,27 @@ function initializeDatabase() {
       }
     });
 
+    // Seed approved travel providers if they don't exist
+    const providers = [
+      { name: 'Java Heritage Travel', email: 'provider@arahloka.com', password: 'provider123' },
+      { name: 'Bali Culture Trip', email: 'bali@arahloka.com', password: 'provider123' },
+      { name: 'Nusantara Culture Tour', email: 'nusantara@arahloka.com', password: 'provider123' }
+    ];
+
+    providers.forEach(p => {
+      db.get("SELECT * FROM users WHERE email = ?", [p.email], async (err, row) => {
+        if (!row) {
+          const hashedPassword = await bcrypt.hash(p.password, 10);
+          db.run(`INSERT INTO users (name, email, password, role, status) VALUES (?, ?, ?, ?, ?)`,
+            [p.name, p.email, hashedPassword, 'travel_provider', 'approved'],
+            (err) => {
+              if (!err) console.log(`Provider ${p.name} seeded.`);
+            }
+          );
+        }
+      });
+    });
+
     // Check if packages table is empty before seeding
     db.get("SELECT COUNT(*) as count FROM packages", (err, row) => {
       if (err) {
@@ -175,6 +196,24 @@ function initializeDatabase() {
       }
       if (row.count === 0) {
         seedDatabase();
+      } else {
+        // Update existing dummy packages with provider_id
+        db.all("SELECT id, name, email FROM users WHERE role = 'travel_provider'", (err, users) => {
+          if (err || !users) return;
+          const javaId = users.find(u => u.email === 'provider@arahloka.com')?.id;
+          const baliId = users.find(u => u.email === 'bali@arahloka.com')?.id;
+          const nusantaraId = users.find(u => u.email === 'nusantara@arahloka.com')?.id;
+
+          if (javaId) {
+            db.run("UPDATE packages SET provider_id = ? WHERE title IN ('Eksplorasi Budaya Yogyakarta', 'Borobudur Sunrise Culture') AND provider_id IS NULL", [javaId]);
+          }
+          if (baliId) {
+            db.run("UPDATE packages SET provider_id = ? WHERE title IN ('Bali Culture & Tradition', 'Desa Penglipuran Experience') AND provider_id IS NULL", [baliId]);
+          }
+          if (nusantaraId) {
+            db.run("UPDATE packages SET provider_id = ? WHERE title = 'Toraja Heritage Journey' AND provider_id IS NULL", [nusantaraId]);
+          }
+        });
       }
     });
   });
@@ -420,14 +459,25 @@ app.delete('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider
 
 // Public Package Routes
 app.get('/api/packages', (req, res) => {
-  db.all("SELECT * FROM packages", [], (err, rows) => {
+  const query = `
+    SELECT p.*, u.name as provider_name, u.email as provider_email
+    FROM packages p
+    LEFT JOIN users u ON p.provider_id = u.id
+  `;
+  db.all(query, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });
 });
 
 app.get('/api/packages/:id', (req, res) => {
-  db.get("SELECT * FROM packages WHERE id = ?", [req.params.id], (err, row) => {
+  const query = `
+    SELECT p.*, u.name as provider_name, u.email as provider_email
+    FROM packages p
+    LEFT JOIN users u ON p.provider_id = u.id
+    WHERE p.id = ?
+  `;
+  db.get(query, [req.params.id], (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ message: 'Package not found' });
     res.json(row);

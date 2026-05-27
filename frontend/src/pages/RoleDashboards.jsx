@@ -70,9 +70,9 @@ export const TouristDashboard = () => {
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: { bg: '#fef3c7', color: '#92400e' },
-      accepted: { bg: '#d1fae5', color: '#065f46' },
-      rejected: { bg: '#fee2e2', color: '#991b1b' }
+      pending: { bg: '#fef3c7', color: '#92400e', label: 'Menunggu Konfirmasi' },
+      accepted: { bg: '#d1fae5', color: '#065f46', label: 'Diterima' },
+      rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Ditolak' }
     }
     const style = styles[status] || styles.pending
     return (
@@ -85,7 +85,7 @@ export const TouristDashboard = () => {
         color: style.color,
         textTransform: 'capitalize'
       }}>
-        {status}
+        {style.label}
       </span>
     )
   }
@@ -150,15 +150,21 @@ export const TouristDashboard = () => {
             {loading ? <p>Memuat booking...</p> : bookings.length === 0 ? <p style={{ fontSize: '0.9rem', color: '#666' }}>Belum ada booking.</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {bookings.map(booking => (
-                  <div key={booking.id} style={{ padding: '1rem', border: '1px solid #eee', borderRadius: '8px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <div key={booking.id} style={{ padding: '1rem', border: '1px solid #eee', borderRadius: '8px', background: booking.status === 'pending' ? '#fffbeb' : 'white' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-start' }}>
                       <h5 style={{ margin: 0 }}>{booking.title}</h5>
                       {getStatusBadge(booking.status)}
                     </div>
-                    <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>Tanggal: {booking.travel_date}</p>
-                    <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>{booking.participants} Peserta</p>
+                    <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>📅 {booking.travel_date}</p>
+                    <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>👥 {booking.participants} Peserta</p>
                     <p style={{ fontWeight: 'bold', fontSize: '0.85rem', marginTop: '0.5rem' }}>Rp {(booking.price * booking.participants).toLocaleString('id-ID')}</p>
                     
+                    {booking.status === 'pending' && (
+                      <p style={{ fontSize: '0.75rem', color: '#92400e', marginTop: '0.5rem', fontStyle: 'italic' }}>
+                        Booking sedang menunggu konfirmasi penyedia. Silakan cek kembali secara berkala.
+                      </p>
+                    )}
+
                     <button 
                       onClick={() => navigate(`/trip-planner/${booking.id}`)}
                       disabled={booking.status === 'rejected'}
@@ -370,8 +376,11 @@ export const ProviderDashboard = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
         <div className="booking-section" style={{ background: 'white', padding: '2rem', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Booking Masuk</h3>
-          {loading ? <p>Memuat booking...</p> : bookings.length === 0 ? <p>Belum ada booking masuk.</p> : (
+          <div style={{ marginBottom: '1.5rem' }}>
+            <h3 style={{ margin: 0 }}>Booking Masuk</h3>
+            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.25rem' }}>* Booking akan muncul di sini jika turis memesan paket yang Anda buat.</p>
+          </div>
+          {loading ? <p>Memuat booking...</p> : bookings.length === 0 ? <p style={{ color: '#888', padding: '1rem', background: '#f9f9f9', borderRadius: '8px', textAlign: 'center' }}>Belum ada booking masuk untuk paket Anda.</p> : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>

@@ -41,26 +41,30 @@ const JourneyStudio = () => {
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h1 style={{ fontSize: '2.5rem', color: 'var(--deep-green)', marginBottom: '0.5rem' }}>Journey Studio</h1>
           <p style={{ color: '#666', marginBottom: '1.5rem' }}>Abadikan momen berkesan dan bagikan cerita perjalanan budaya Anda.</p>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-            <button 
-              onClick={() => navigate(user.id ? '/tourist' : '/login')}
-              style={{ 
-                padding: '0.6rem 1.2rem', 
-                borderRadius: '50px', 
-                border: '2px solid var(--burnt-orange)', 
-                background: 'white', 
-                color: 'var(--burnt-orange)', 
-                fontWeight: 'bold', 
-                cursor: 'pointer' 
-              }}
-            >
-              Lihat Booking Saya untuk Itinerary & Persiapan
-            </button>
-          </div>
+        </div>
+
+        <div style={{ background: '#fdfbf0', border: '1px dashed var(--burnt-orange)', padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem', textAlign: 'center' }}>
+          <p style={{ fontSize: '0.95rem', color: '#444', marginBottom: '1rem' }}>
+            ✨ <strong>Informasi:</strong> Itinerary dan checklist persiapan perjalanan kini tersedia melalui menu <strong>Persiapan Trip</strong> pada halaman Booking Saya.
+          </p>
+          <button 
+            onClick={() => navigate(user.id ? '/tourist' : '/login')}
+            style={{ 
+              padding: '0.6rem 1.2rem', 
+              borderRadius: '50px', 
+              border: 'none', 
+              background: 'var(--burnt-orange)', 
+              color: 'white', 
+              fontWeight: 'bold', 
+              cursor: 'pointer' 
+            }}
+          >
+            Lihat Booking Saya
+          </button>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          {['itinerary', 'memory', 'story'].map(tab => (
+          {['memory', 'story'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -76,112 +80,16 @@ const JourneyStudio = () => {
                 transition: 'all 0.3s'
               }}
             >
-              {tab === 'itinerary' ? 'Smart Itinerary' : tab === 'memory' ? 'Memory Lane' : 'Story Challenge'}
+              {tab === 'memory' ? 'Memory Lane' : 'Story Challenge'}
             </button>
           ))}
         </div>
 
         <div style={{ minHeight: '500px' }}>
-          {activeTab === 'itinerary' && (
-            <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
-              <h3 style={{ marginBottom: '1rem' }}>Smart Itinerary Planner</h3>
-              <p style={{ color: '#666', maxWidth: '500px', margin: '0 auto 2rem' }}>
-                Itinerary perjalanan kini dibuat secara otomatis berdasarkan booking yang sudah Anda lakukan untuk memberikan rencana yang lebih akurat dan terpersonalisasi.
-              </p>
-              <button 
-                onClick={() => navigate(user.id ? '/tourist' : '/login')}
-                className="btn-register"
-                style={{ border: 'none', cursor: 'pointer' }}
-              >
-                Cek Persiapan di Dashboard
-              </button>
-            </div>
-          )}
           {activeTab === 'memory' && <MemoryLane user={user} />}
           {activeTab === 'story' && <StoryChallenge user={user} stories={stories} refresh={fetchStories} />}
         </div>
       </section>
-    </div>
-  )
-}
-
-const ItineraryPlanner = ({ user }) => {
-  const [plan, setPlan] = useState(null)
-  const [form, setForm] = useState({ destination: '', duration: '3', budget: 'Ekonomis', interest: 'Sejarah' })
-  const [saving, setSaving] = useState(false)
-
-  const generateItinerary = () => {
-    const itinerary = `Hari 1: Kedatangan di ${form.destination}, kunjungan ke landmark budaya utama, dan wisata kuliner lokal malam hari.
-Hari 2: Eksplorasi desa adat atau warisan sejarah, aktivitas kerajinan lokal, dan pertunjukan seni budaya malam.
-Hari 3: Jalan-jalan santai, berburu suvenir khas, dan refleksi perjalanan budaya sebelum kepulangan.`
-    setPlan(itinerary)
-  }
-
-  const saveItinerary = async () => {
-    if (!user.id) return alert('Silakan login sebagai turis untuk menyimpan itinerary.')
-    setSaving(true)
-    try {
-      const token = localStorage.getItem('token')
-      await axios.post(`${import.meta.env.VITE_API_URL}/journey-studio`, {
-        type: 'itinerary',
-        destination: form.destination,
-        content: plan
-      }, { headers: { Authorization: `Bearer ${token}` } })
-      alert('Itinerary berhasil disimpan ke koleksi Anda!')
-    } catch (err) {
-      alert('Gagal menyimpan itinerary')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2rem' }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Smart Itinerary Planner</h3>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Destinasi</label>
-          <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} placeholder="e.g. Yogyakarta, Ubud" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Durasi (Hari)</label>
-            <input type="number" value={form.duration} onChange={e => setForm({...form, duration: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Budget</label>
-            <select value={form.budget} onChange={e => setForm({...form, budget: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-              <option>Ekonomis</option>
-              <option>Menengah</option>
-              <option>Mewah</option>
-            </select>
-          </div>
-        </div>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Minat Utama</label>
-          <select value={form.interest} onChange={e => setForm({...form, interest: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
-            <option>Sejarah</option>
-            <option>Seni & Kerajinan</option>
-            <option>Kuliner</option>
-            <option>Alam</option>
-          </select>
-        </div>
-        <button onClick={generateItinerary} className="btn-register" style={{ width: '100%', border: 'none', cursor: 'pointer' }}>Buat Itinerary</button>
-      </div>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Hasil Perencanaan</h3>
-        {plan ? (
-          <div>
-            <div style={{ whiteSpace: 'pre-line', lineHeight: '1.8', color: '#444', background: '#f8f9fa', padding: '1.5rem', borderRadius: '8px', marginBottom: '1.5rem' }}>
-              {plan}
-            </div>
-            <button onClick={saveItinerary} disabled={saving} style={{ background: 'var(--deep-green)', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', cursor: 'pointer' }}>
-              {saving ? 'Menyimpan...' : 'Simpan Itinerary'}
-            </button>
-          </div>
-        ) : <p style={{ color: '#888', textAlign: 'center', marginTop: '3rem' }}>Isi form dan klik "Buat Itinerary" untuk melihat hasil.</p>}
-      </div>
     </div>
   )
 }

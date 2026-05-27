@@ -59,8 +59,8 @@ function Landing() {
             <p>Pantau kondisi cuaca real-time dari Open-Meteo untuk rencana perjalanan yang sempurna.</p>
           </div>
           <div className="feature-card">
-            <h3>Journey Studio Lite</h3>
-            <p>Rancang itinerary, simpan kenangan, dan bagikan cerita budaya Anda dalam satu tempat.</p>
+            <h3>Journey Studio</h3>
+            <p>Simpan kenangan dan bagikan cerita budaya Anda setelah melakukan perjalanan.</p>
           </div>
         </div>
       </section>
@@ -76,8 +76,8 @@ function Landing() {
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
                 <div style={{ background: 'var(--cream)', padding: '0.75rem', borderRadius: '12px' }}>🗺️</div>
                 <div>
-                  <h4 style={{ color: 'var(--burnt-orange)' }}>Smart Itinerary Planner</h4>
-                  <p style={{ fontSize: '0.9rem', color: '#888' }}>Rencana perjalanan kurasi budaya yang efisien.</p>
+                  <h4 style={{ color: 'var(--burnt-orange)' }}>Persiapan Trip</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#888' }}>Itinerary dan checklist otomatis dari booking Anda.</p>
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
@@ -128,7 +128,10 @@ function Landing() {
               <Link key={pkg.id} to={`/packages/${pkg.id}`} className="package-card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <img src={pkg.image_url} alt={pkg.title} className="package-image" />
                 <div className="package-content">
-                  <div className="package-location">{pkg.location}</div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div className="package-location">{pkg.location}</div>
+                    {pkg.provider_name && <span style={{ fontSize: '0.7rem', color: '#888', fontStyle: 'italic' }}>oleh {pkg.provider_name}</span>}
+                  </div>
                   <h3 className="package-title">{pkg.title}</h3>
                   <p className="package-description" style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#666' }}>
                     {pkg.description}
