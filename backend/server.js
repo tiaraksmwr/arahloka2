@@ -93,12 +93,15 @@ function initializeDatabase() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       type TEXT CHECK(type IN ('itinerary', 'memory', 'story')) NOT NULL,
+      booking_id INTEGER,
       destination TEXT NOT NULL,
+      title TEXT,
       content TEXT NOT NULL,
       rating INTEGER,
       image_url TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (booking_id) REFERENCES bookings(id)
     )`);
 
     // Create trip_plans table
@@ -154,6 +157,17 @@ function initializeDatabase() {
       db.run("UPDATE packages SET latitude = -8.4240, longitude = 115.3593 WHERE title = 'Desa Penglipuran Experience' AND latitude IS NULL");
       db.run("UPDATE packages SET latitude = -2.9700, longitude = 119.9000 WHERE title = 'Toraja Heritage Journey' AND latitude IS NULL");
       db.run("UPDATE packages SET latitude = -7.6079, longitude = 110.2038 WHERE title = 'Borobudur Sunrise Culture' AND latitude IS NULL");
+    });
+
+    db.all("PRAGMA table_info(journey_studio)", (err, columns) => {
+      if (err) return;
+      const columnNames = columns.map(c => c.name);
+      if (!columnNames.includes('booking_id')) {
+        db.run("ALTER TABLE journey_studio ADD COLUMN booking_id INTEGER");
+      }
+      if (!columnNames.includes('title')) {
+        db.run("ALTER TABLE journey_studio ADD COLUMN title TEXT");
+      }
     });
 
     // Seed superadmin if not exists
@@ -804,29 +818,46 @@ app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['to
   });
 });
 
-// Journey Studio Routes
-app.post('/api/journey-studio', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
-  const { type, destination, content, rating, image_url } = req.body;
+// Memory Card Routes
+app.post('/api/memory-cards', authMiddleware, roleMiddleware(['tourist']), upload.single('image'), (req, res) => {
+  const { booking_id, destination, title, content, rating } = req.body;
+  const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
-  if (!['itinerary', 'memory', 'story'].includes(type)) {
-    return res.status(400).json({ message: 'Invalid type' });
-  }
+  const saveCard = () => {
+    db.run(
+      "INSERT INTO journey_studio (user_id, type, booking_id, destination, title, content, rating, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [req.user.id, 'memory', booking_id || null, destination, title, content, rating, image_url],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, message: 'Memory Lane Card saved successfully' });
+      }
+    );
+  };
 
-  db.run(
-    "INSERT INTO journey_studio (user_id, type, destination, content, rating, image_url) VALUES (?, ?, ?, ?, ?, ?)",
-    [req.user.id, type, destination, content, rating, image_url],
-    function(err) {
+  if (booking_id) {
+    db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.status(201).json({ id: this.lastID, message: 'Journey content saved successfully' });
-    }
-  );
+      if (!row) return res.status(403).json({ message: 'Unauthorized booking access' });
+      saveCard();
+    });
+  } else {
+    saveCard();
+  }
 });
 
-app.get('/api/journey-studio', (req, res) => {
+app.get('/api/memory-cards/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  db.all("SELECT * FROM journey_studio WHERE user_id = ? AND type = 'memory' ORDER BY created_at DESC", [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/memory-cards', (req, res) => {
   const query = `
     SELECT j.*, u.name as user_name 
     FROM journey_studio j
     JOIN users u ON j.user_id = u.id
+    WHERE j.type = 'memory'
     ORDER BY j.created_at DESC
   `;
   db.all(query, [], (err, rows) => {
@@ -835,8 +866,56 @@ app.get('/api/journey-studio', (req, res) => {
   });
 });
 
-app.get('/api/journey-studio/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
-  db.all("SELECT * FROM journey_studio WHERE user_id = ? ORDER BY created_at DESC", [req.user.id], (err, rows) => {
+// Story Challenge Routes
+app.post('/api/story-challenges', authMiddleware, roleMiddleware(['tourist']), upload.single('image'), (req, res) => {
+  const { booking_id, destination, title, content, rating } = req.body;
+  const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+  const saveStory = () => {
+    db.run(
+      "INSERT INTO journey_studio (user_id, type, booking_id, destination, title, content, rating, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      [req.user.id, 'story', booking_id || null, destination, title, content, rating, image_url],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, message: 'Story shared successfully' });
+      }
+    );
+  };
+
+  if (booking_id) {
+    db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (!row) return res.status(403).json({ message: 'Unauthorized booking access' });
+      saveStory();
+    });
+  } else {
+    saveStory();
+  }
+});
+
+app.get('/api/story-challenges', (req, res) => {
+  const query = `
+    SELECT j.*, u.name as user_name 
+    FROM journey_studio j
+    JOIN users u ON j.user_id = u.id
+    WHERE j.type = 'story'
+    ORDER BY j.created_at DESC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Legacy generic journey-studio endpoints for compatibility if needed
+app.get('/api/journey-studio', (req, res) => {
+  const query = `
+    SELECT j.*, u.name as user_name 
+    FROM journey_studio j
+    JOIN users u ON j.user_id = u.id
+    ORDER BY j.created_at DESC
+  `;
+  db.all(query, [], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json(rows);
   });

@@ -2,25 +2,55 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+const getFullImageUrl = (url) => {
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  const backendUrl = import.meta.env.VITE_API_URL.replace('/api', '')
+  return `${backendUrl}${url}`
+}
+
+const StarRating = ({ rating, setRating, editable = true }) => {
+  return (
+    <div style={{ display: 'flex', gap: '0.25rem' }}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span
+          key={star}
+          onClick={() => editable && setRating(star)}
+          style={{
+            cursor: editable ? 'pointer' : 'default',
+            fontSize: '1.5rem',
+            color: star <= rating ? '#f59e0b' : '#d1d5db',
+            transition: 'color 0.2s'
+          }}
+        >
+          ★
+        </span>
+      ))}
+    </div>
+  )
+}
+
 const JourneyStudio = () => {
   const [activeTab, setActiveTab] = useState('memory')
-  const [loading, setLoading] = useState(false)
-  const [stories, setStories] = useState([])
+  const [userBookings, setUserBookings] = useState([])
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const navigate = useNavigate()
 
   useEffect(() => {
-    if (activeTab === 'story') {
-      fetchStories()
+    if (user.id && user.role === 'tourist') {
+      fetchUserBookings()
     }
-  }, [activeTab])
+  }, [user.id])
 
-  const fetchStories = async () => {
+  const fetchUserBookings = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/journey-studio`)
-      setStories(response.data.filter(item => item.type === 'story'))
+      const token = localStorage.getItem('token')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/bookings/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setUserBookings(response.data)
     } catch (err) {
-      console.error('Error fetching stories:', err)
+      console.error('Error fetching bookings:', err)
     }
   }
 
@@ -40,74 +70,109 @@ const JourneyStudio = () => {
       <section className="section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
           <h1 style={{ fontSize: '2.5rem', color: 'var(--deep-green)', marginBottom: '0.5rem' }}>Journey Studio</h1>
-          <p style={{ color: '#666', marginBottom: '1.5rem' }}>Abadikan momen berkesan dan bagikan cerita perjalanan budaya Anda.</p>
+          <p style={{ color: '#666' }}>ArahLoka Journey Studio membantu Anda menyimpan kenangan perjalanan dan membagikan cerita budaya bersama komunitas.</p>
         </div>
 
-        <div style={{ background: '#fdfbf0', border: '1px dashed var(--burnt-orange)', padding: '1.5rem', borderRadius: '16px', marginBottom: '3rem', textAlign: 'center' }}>
-          <p style={{ fontSize: '0.95rem', color: '#444', marginBottom: '1rem' }}>
-            ✨ <strong>Informasi:</strong> Itinerary dan checklist persiapan perjalanan kini tersedia melalui menu <strong>Persiapan Trip</strong> pada halaman Booking Saya.
-          </p>
-          <button 
-            onClick={() => navigate(user.id ? '/tourist' : '/login')}
-            style={{ 
-              padding: '0.6rem 1.2rem', 
-              borderRadius: '50px', 
-              border: 'none', 
-              background: 'var(--burnt-orange)', 
-              color: 'white', 
-              fontWeight: 'bold', 
-              cursor: 'pointer' 
-            }}
-          >
-            Lihat Booking Saya
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
-          {['memory', 'story'].map(tab => (
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '3rem' }}>
+          {[
+            { id: 'memory', label: 'Memory Lane', icon: '📸' },
+            { id: 'story', label: 'Community Story', icon: '📖' }
+          ].map(tab => (
             <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '0.75rem 1.5rem',
                 borderRadius: '50px',
                 border: 'none',
                 cursor: 'pointer',
                 fontWeight: 'bold',
-                backgroundColor: activeTab === tab ? 'var(--burnt-orange)' : 'white',
-                color: activeTab === tab ? 'white' : 'var(--text-dark)',
+                backgroundColor: activeTab === tab.id ? 'var(--burnt-orange)' : 'white',
+                color: activeTab === tab.id ? 'white' : 'var(--text-dark)',
                 boxShadow: 'var(--shadow)',
-                transition: 'all 0.3s'
+                transition: 'all 0.3s',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
               }}
             >
-              {tab === 'memory' ? 'Memory Lane' : 'Story Challenge'}
+              <span>{tab.icon}</span> {tab.label}
             </button>
           ))}
         </div>
 
         <div style={{ minHeight: '500px' }}>
-          {activeTab === 'memory' && <MemoryLane user={user} />}
-          {activeTab === 'story' && <StoryChallenge user={user} stories={stories} refresh={fetchStories} />}
+          {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
+          {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
         </div>
       </section>
     </div>
   )
 }
 
-const MemoryLane = ({ user }) => {
-  const [form, setForm] = useState({ destination: '', rating: 5, content: '', image_url: '' })
+const MemoryLane = ({ user, bookings }) => {
+  const [form, setForm] = useState({ booking_id: '', destination: '', title: '', rating: 5, content: '' })
+  const [imageFile, setImageFile] = useState(null)
+  const [myCards, setMyCards] = useState([])
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const saveMemory = async () => {
-    if (!user.id) return alert('Silakan login sebagai turis untuk menyimpan memory card.')
-    setSaving(true)
+  useEffect(() => {
+    fetchMyCards()
+  }, [user.id])
+
+  const fetchMyCards = async () => {
+    if (!user.id) {
+      setLoading(false)
+      return
+    }
     try {
       const token = localStorage.getItem('token')
-      await axios.post(`${import.meta.env.VITE_API_URL}/journey-studio`, {
-        type: 'memory',
-        ...form
-      }, { headers: { Authorization: `Bearer ${token}` } })
-      alert('Memory card berhasil disimpan!')
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/memory-cards/my`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setMyCards(response.data)
+      setLoading(false)
+    } catch (err) {
+      console.error('Error fetching my cards:', err)
+      setLoading(false)
+    }
+  }
+
+  const handleBookingChange = (e) => {
+    const bookingId = e.target.value
+    const selected = bookings.find(b => b.id.toString() === bookingId)
+    if (selected) {
+      setForm({ ...form, booking_id: bookingId, destination: selected.location, title: selected.title })
+    } else {
+      setForm({ ...form, booking_id: '', destination: '', title: '' })
+    }
+  }
+
+  const handleSave = async (e) => {
+    e.preventDefault()
+    if (!user.id) return alert('Login sebagai turis untuk menyimpan kartu kenangan.')
+    
+    setSaving(true)
+    const formData = new FormData()
+    formData.append('booking_id', form.booking_id)
+    formData.append('destination', form.destination)
+    formData.append('title', form.title)
+    formData.append('rating', form.rating)
+    formData.append('content', form.content)
+    if (imageFile) {
+      formData.append('image', imageFile)
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      await axios.post(`${import.meta.env.VITE_API_URL}/memory-cards`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      alert('Memory Lane Card berhasil disimpan.')
+      setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' })
+      setImageFile(null)
+      fetchMyCards()
     } catch (err) {
       alert('Gagal menyimpan memory card')
     } finally {
@@ -116,74 +181,147 @@ const MemoryLane = ({ user }) => {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-      <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-        <h3 style={{ marginBottom: '1.5rem' }}>Memory Lane Card</h3>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Destinasi</label>
-          <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} placeholder="e.g. Borobudur" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-        </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Rating (1-5)</label>
-          <input type="number" min="1" max="5" value={form.rating} onChange={e => setForm({...form, rating: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-        </div>
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Catatan Kenangan</label>
-          <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} rows="4" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}></textarea>
-        </div>
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>URL Gambar (Opsional)</label>
-          <input type="text" value={form.image_url} onChange={e => setForm({...form, image_url: e.target.value})} placeholder="https://..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
-        </div>
-        <button onClick={saveMemory} disabled={saving} className="btn-register" style={{ width: '100%', border: 'none', cursor: 'pointer' }}>
-          {saving ? 'Menyimpan...' : 'Simpan Memory Card'}
-        </button>
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start' }}>
-        <div style={{ 
-          background: 'white', 
-          width: '350px', 
-          borderRadius: '20px', 
-          overflow: 'hidden', 
-          boxShadow: '0 15px 35px rgba(0,0,0,0.1)',
-          border: '1px solid #eee'
-        }}>
-          <div style={{ height: '200px', background: '#f0f0f0', overflow: 'hidden' }}>
-            {form.image_url ? <img src={form.image_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Memory" /> : (
-              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ccc' }}>Photo Preview</div>
-            )}
-          </div>
-          <div style={{ padding: '1.5rem', position: 'relative' }}>
-            <div style={{ position: 'absolute', top: '-25px', right: '20px', background: 'var(--burnt-orange)', color: 'white', width: '50px', height: '50px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', border: '4px solid white' }}>
-              {form.rating}
+    <div style={{ display: 'grid', gap: '4rem' }}>
+      <div style={{ background: 'white', padding: '2.5rem', borderRadius: '16px', boxShadow: 'var(--shadow)', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+        <h3 style={{ marginBottom: '1.5rem', color: 'var(--deep-green)' }}>Buat Kartu Kenangan Baru</h3>
+        {!user.id && <p style={{ color: 'var(--burnt-orange)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Login sebagai turis untuk mulai mengoleksi kenangan perjalanan Anda.</p>}
+        <form onSubmit={handleSave} style={{ display: 'grid', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Hubungkan ke Booking (Opsional)</label>
+              <select value={form.booking_id} onChange={handleBookingChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <option value="">-- Pilih Trip Selesai --</option>
+                {bookings.filter(b => b.status === 'accepted').map(b => (
+                  <option key={b.id} value={b.id}>{b.title} ({b.travel_date})</option>
+                ))}
+              </select>
             </div>
-            <h4 style={{ color: 'var(--deep-green)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>{form.destination || 'Nama Destinasi'}</h4>
-            <p style={{ fontSize: '0.9rem', color: '#555', fontStyle: 'italic', lineHeight: '1.6' }}>"{form.content || 'Tuliskan kenangan indahmu di sini...'}"</p>
-            <div style={{ marginTop: '1.5rem', fontSize: '0.75rem', color: '#999', textAlign: 'right' }}>ArahLoka Memory Lane</div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Destinasi</label>
+              <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required placeholder="e.g. Borobudur" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+            </div>
           </div>
-        </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '1rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Judul Kenangan</label>
+              <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required placeholder="e.g. Senja di Pelataran Candi" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Rating Pengalaman</label>
+              <StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Catatan Kenangan</label>
+            <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="3" placeholder="Tuliskan momen paling berkesan dari perjalanan ini..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}></textarea>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Upload Gambar (Opsional)</label>
+            <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ width: '100%', padding: '0.5rem 0' }} />
+          </div>
+
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+            <button type="submit" disabled={saving || !user.id} className="btn-register" style={{ flex: 2, border: 'none', cursor: 'pointer' }}>
+              {saving ? 'Menyimpan...' : 'Simpan ke Koleksi Saya'}
+            </button>
+            <button type="button" onClick={() => { setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' }); setImageFile(null); }} style={{ flex: 1, padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #ddd', background: 'none', cursor: 'pointer' }}>Reset</button>
+          </div>
+        </form>
+      </div>
+
+      <div>
+        <h3 style={{ marginBottom: '1.5rem', color: 'var(--deep-green)', borderBottom: '2px solid var(--cream)', paddingBottom: '0.5rem' }}>Koleksi Kartu Saya</h3>
+        {loading ? <p>Memuat koleksi...</p> : myCards.length === 0 ? <p style={{ color: '#999', textAlign: 'center', padding: '2rem' }}>Belum ada kartu kenangan. Mulai simpan momen perjalanan Anda!</p> : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+            {myCards.map(card => (
+              <div key={card.id} style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow)', border: '1px solid #eee', display: 'flex', flexDirection: 'column' }}>
+                {card.image_url && (
+                  <img 
+                    src={getFullImageUrl(card.image_url)} 
+                    style={{ width: '100%', height: '160px', objectFit: 'cover' }} 
+                    alt={card.title} 
+                    onError={(e) => e.target.style.display = 'none'} 
+                  />
+                )}
+                <div style={{ padding: '1.25rem', flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--burnt-orange)', fontWeight: 'bold', textTransform: 'uppercase' }}>{card.destination}</span>
+                    <StarRating rating={card.rating} editable={false} />
+                  </div>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-dark)' }}>{card.title}</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#666', fontStyle: 'italic', lineHeight: '1.5' }}>"{card.content}"</p>
+                  <div style={{ marginTop: 'auto', paddingTop: '1rem', fontSize: '0.7rem', color: '#ccc', textAlign: 'right' }}>
+                    {new Date(card.created_at).toLocaleDateString('id-ID')}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-const StoryChallenge = ({ user, stories, refresh }) => {
-  const [form, setForm] = useState({ destination: '', content: '' })
+const StoryChallenge = ({ user, bookings }) => {
+  const [form, setForm] = useState({ booking_id: '', destination: '', title: '', content: '', rating: 5 })
+  const [imageFile, setImageFile] = useState(null)
+  const [stories, setStories] = useState([])
+  const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  const submitStory = async (e) => {
+  useEffect(() => {
+    fetchStories()
+  }, [])
+
+  const fetchStories = async () => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/story-challenges`)
+      setStories(response.data)
+      setLoading(false)
+    } catch (err) {
+      console.error('Error fetching stories:', err)
+      setLoading(false)
+    }
+  }
+
+  const handleBookingChange = (e) => {
+    const bookingId = e.target.value
+    const selected = bookings.find(b => b.id.toString() === bookingId)
+    if (selected) {
+      setForm({ ...form, booking_id: bookingId, destination: selected.location, title: `Kisah di ${selected.title}` })
+    } else {
+      setForm({ ...form, booking_id: '', destination: '', title: '' })
+    }
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!user.id) return alert('Silakan login sebagai turis untuk mengirim cerita.')
+    if (!user.id) return alert('Login sebagai turis untuk membagikan cerita.')
+    
     setSubmitting(true)
+    const formData = new FormData()
+    formData.append('booking_id', form.booking_id)
+    formData.append('destination', form.destination)
+    formData.append('title', form.title)
+    formData.append('rating', form.rating)
+    formData.append('content', form.content)
+    if (imageFile) {
+      formData.append('image', imageFile)
+    }
+
     try {
       const token = localStorage.getItem('token')
-      await axios.post(`${import.meta.env.VITE_API_URL}/journey-studio`, {
-        type: 'story',
-        ...form
-      }, { headers: { Authorization: `Bearer ${token}` } })
-      alert('Cerita Anda berhasil dikirim!')
-      setForm({ destination: '', content: '' })
-      refresh()
+      await axios.post(`${import.meta.env.VITE_API_URL}/story-challenges`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      alert('Cerita berhasil dikirim ke Community Story Challenge.')
+      setForm({ booking_id: '', destination: '', title: '', content: '', rating: 5 })
+      setImageFile(null)
+      fetchStories()
     } catch (err) {
       alert('Gagal mengirim cerita')
     } finally {
@@ -192,43 +330,86 @@ const StoryChallenge = ({ user, stories, refresh }) => {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
-      <div>
-        <h3 style={{ marginBottom: '1.5rem' }}>Community Story Challenge</h3>
-        <div style={{ background: 'var(--deep-green)', color: 'white', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
-          <h4 style={{ marginBottom: '0.5rem' }}>Theme: Cerita Budaya Paling Berkesan</h4>
-          <p style={{ fontSize: '0.9rem', opacity: 0.9 }}>Bagikan pengalaman unikmu saat berinteraksi dengan budaya lokal. Cerita terbaik akan mendapatkan apresiasi dari komunitas!</p>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '3rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gap: '2rem' }}>
+        <div style={{ background: 'var(--deep-green)', color: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
+          <h3 style={{ marginBottom: '0.75rem', color: 'white' }}>Community Story Challenge</h3>
+          <h4 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: 'var(--burnt-orange)' }}>Theme: Cerita Budaya Paling Berkesan</h4>
+          <p style={{ fontSize: '0.95rem', opacity: 0.9, lineHeight: '1.6' }}>Bagikan pengalaman unikmu saat berinteraksi dengan budaya lokal. Cerita terbaik akan mendapatkan apresiasi dari komunitas penjelajah ArahLoka!</p>
         </div>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {stories.map(story => (
-            <div key={story.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <h4 style={{ color: 'var(--burnt-orange)' }}>{story.destination}</h4>
-                <span style={{ fontSize: '0.8rem', color: '#888' }}>oleh {story.user_name}</span>
+          {loading ? <p>Memuat inspirasi...</p> : stories.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#999', padding: '3rem', background: 'white', borderRadius: '16px' }}>Belum ada cerita. Jadilah yang pertama berbagi!</p>
+          ) : stories.map(story => (
+            <div key={story.id} style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', alignItems: 'flex-start' }}>
+                <div>
+                  <h4 style={{ color: 'var(--burnt-orange)', margin: '0 0 0.25rem 0', fontSize: '1.2rem' }}>{story.title}</h4>
+                  <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'bold' }}>📍 {story.destination}</span>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 'bold', color: 'var(--deep-green)' }}>{story.user_name}</div>
+                  <div style={{ fontSize: '0.7rem', color: '#aaa' }}>{new Date(story.created_at).toLocaleDateString('id-ID')}</div>
+                </div>
               </div>
-              <p style={{ lineHeight: '1.6', color: '#444' }}>{story.content}</p>
-              <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem', display: 'flex', gap: '1rem' }}>
-                <button style={{ background: 'none', border: 'none', color: '#666', fontSize: '0.8rem', cursor: 'pointer' }}>❤️ Suka</button>
-                <button style={{ background: 'none', border: 'none', color: '#666', fontSize: '0.8rem', cursor: 'pointer' }}>💬 Komentar</button>
+              
+              <div style={{ marginBottom: '1rem' }}><StarRating rating={story.rating} editable={false} /></div>
+              
+              <p style={{ lineHeight: '1.8', color: '#444', fontSize: '1rem', whiteSpace: 'pre-line' }}>{story.content}</p>
+              
+              {story.image_url && (
+                <img 
+                  src={getFullImageUrl(story.image_url)} 
+                  style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', borderRadius: '12px', marginTop: '1.5rem' }} 
+                  alt={story.title} 
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+              )}
+              
+              <div style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.25rem', display: 'flex', gap: '1.5rem' }}>
+                <button style={{ background: 'none', border: 'none', color: '#666', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>❤️ <span>Suka</span></button>
+                <button style={{ background: 'none', border: 'none', color: '#666', fontSize: '0.9rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>💬 <span>Diskusi</span></button>
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div>
-        <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)', position: 'sticky', top: '100px' }}>
-          <h3 style={{ marginBottom: '1.5rem' }}>Kirim Cerita</h3>
-          <form onSubmit={submitStory}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Judul atau Destinasi</label>
-              <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+
+      <div style={{ position: 'sticky', top: '2rem' }}>
+        <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
+          <h3 style={{ marginBottom: '1.5rem', color: 'var(--deep-green)' }}>Tulis Kisah Anda</h3>
+          {!user.id && <p style={{ color: 'var(--burnt-orange)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Login sebagai turis untuk membagikan kisah budaya Anda.</p>}
+          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '1.25rem' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Pilih Booking (Opsional)</label>
+              <select value={form.booking_id} onChange={handleBookingChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}>
+                <option value="">-- Pilih Trip Selesai --</option>
+                {bookings.filter(b => b.status === 'accepted').map(b => (
+                  <option key={b.id} value={b.id}>{b.title}</option>
+                ))}
+              </select>
             </div>
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Isi Cerita</label>
-              <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="6" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}></textarea>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Destinasi & Judul</label>
+              <div style={{ display: 'grid', gap: '0.75rem' }}>
+                <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required placeholder="Lokasi perjalanan..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+                <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required placeholder="Judul kisah Anda..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }} />
+              </div>
             </div>
-            <button type="submit" disabled={submitting} className="btn-register" style={{ width: '100%', border: 'none', cursor: 'pointer' }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Rating Budaya</label>
+              <StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} />
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Isi Cerita</label>
+              <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="6" placeholder="Ceritakan pengalaman unik Anda bersama budaya lokal..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}></textarea>
+            </div>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', fontWeight: 'bold' }}>Upload Gambar (Opsional)</label>
+              <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ width: '100%', padding: '0.5rem 0' }} />
+            </div>
+            <button type="submit" disabled={submitting || !user.id} className="btn-register" style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '1rem' }}>
               {submitting ? 'Mengirim...' : 'Kirim ke Challenge'}
             </button>
           </form>

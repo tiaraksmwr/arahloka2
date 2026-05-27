@@ -134,8 +134,8 @@ export const TouristDashboard = () => {
 
         <div className="sidebar">
           <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}>
-            <h3 style={{ marginBottom: '1rem' }}>Journey Studio</h3>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>Rancang itinerary, simpan kenangan, dan bagikan cerita budaya Anda.</p>
+            <h3 style={{ marginBottom: '1rem' }}>Setelah Perjalanan</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>Abadikan perjalanan Anda. Buat Memory Lane Card atau bagikan cerita budaya Anda.</p>
             <button 
               onClick={() => navigate('/journey-studio')}
               className="btn-register" 
@@ -165,26 +165,46 @@ export const TouristDashboard = () => {
                       </p>
                     )}
 
-                    <button 
-                      onClick={() => navigate(`/trip-planner/${booking.id}`)}
-                      disabled={booking.status === 'rejected'}
-                      style={{ 
-                        width: '100%', 
-                        marginTop: '1rem', 
-                        padding: '0.5rem', 
-                        borderRadius: '6px', 
-                        border: '1px solid var(--burnt-orange)', 
-                        background: 'transparent', 
-                        color: 'var(--burnt-orange)', 
-                        fontSize: '0.8rem', 
-                        fontWeight: 'bold',
-                        cursor: booking.status === 'rejected' ? 'not-allowed' : 'pointer',
-                        opacity: booking.status === 'rejected' ? 0.5 : 1
-                      }}
-                      title={booking.status === 'rejected' ? 'Persiapan trip tidak tersedia untuk booking yang ditolak.' : ''}
-                    >
-                      {booking.status === 'rejected' ? 'Persiapan Tidak Tersedia' : 'Persiapan Trip'}
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                      <button 
+                        onClick={() => navigate(`/trip-planner/${booking.id}`)}
+                        disabled={booking.status === 'rejected'}
+                        style={{ 
+                          width: '100%', 
+                          padding: '0.5rem', 
+                          borderRadius: '6px', 
+                          border: '1px solid var(--burnt-orange)', 
+                          background: 'transparent', 
+                          color: 'var(--burnt-orange)', 
+                          fontSize: '0.8rem', 
+                          fontWeight: 'bold',
+                          cursor: booking.status === 'rejected' ? 'not-allowed' : 'pointer',
+                          opacity: booking.status === 'rejected' ? 0.5 : 1
+                        }}
+                        title={booking.status === 'rejected' ? 'Persiapan trip tidak tersedia untuk booking yang ditolak.' : ''}
+                      >
+                        {booking.status === 'rejected' ? 'Persiapan Tidak Tersedia' : 'Persiapan Trip'}
+                      </button>
+
+                      {booking.status === 'accepted' && (
+                        <button 
+                          onClick={() => navigate('/journey-studio')}
+                          style={{ 
+                            width: '100%', 
+                            padding: '0.5rem', 
+                            borderRadius: '6px', 
+                            background: 'var(--deep-green)', 
+                            color: 'white', 
+                            border: 'none',
+                            fontSize: '0.8rem', 
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          📸 Buat Memory Card
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
