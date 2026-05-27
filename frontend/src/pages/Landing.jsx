@@ -72,7 +72,7 @@ function Landing() {
         ) : (
           <div className="packages-grid">
             {packages.map(pkg => (
-              <div key={pkg.id} className="package-card">
+              <Link key={pkg.id} to={`/packages/${pkg.id}`} className="package-card" style={{ textDecoration: 'none', color: 'inherit' }}>
                 <img src={pkg.image_url} alt={pkg.title} className="package-image" />
                 <div className="package-content">
                   <div className="package-location">{pkg.location}</div>
@@ -85,7 +85,7 @@ function Landing() {
                     <span className="package-price">{formatPrice(pkg.price)}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

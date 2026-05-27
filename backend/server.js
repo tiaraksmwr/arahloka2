@@ -72,6 +72,20 @@ function initializeDatabase() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Create bookings table
+    db.run(`CREATE TABLE IF NOT EXISTS bookings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tourist_id INTEGER NOT NULL,
+      package_id INTEGER NOT NULL,
+      travel_date TEXT NOT NULL,
+      participants INTEGER NOT NULL,
+      notes TEXT,
+      status TEXT CHECK(status IN ('pending', 'accepted', 'rejected')) DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tourist_id) REFERENCES users(id),
+      FOREIGN KEY (package_id) REFERENCES packages(id)
+    )`);
+
     // Add missing columns safely if they don't exist
     db.all("PRAGMA table_info(packages)", (err, columns) => {
       if (err) return;
@@ -349,6 +363,87 @@ app.get('/api/packages/:id', (req, res) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!row) return res.status(404).json({ message: 'Package not found' });
     res.json(row);
+  });
+});
+
+// Booking Routes
+app.post('/api/bookings', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const { package_id, travel_date, participants, notes } = req.body;
+
+  if (!participants || participants < 1) {
+    return res.status(400).json({ message: 'Participants must be at least 1' });
+  }
+
+  // Validate package exists
+  db.get("SELECT id FROM packages WHERE id = ?", [package_id], (err, pkg) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!pkg) return res.status(404).json({ message: 'Package not found' });
+
+    db.run(
+      "INSERT INTO bookings (tourist_id, package_id, travel_date, participants, notes) VALUES (?, ?, ?, ?, ?)",
+      [req.user.id, package_id, travel_date, participants, notes],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, message: 'Booking created successfully' });
+      }
+    );
+  });
+});
+
+app.get('/api/bookings/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const query = `
+    SELECT b.*, p.title, p.location, p.price, p.image_url, p.duration 
+    FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.tourist_id = ?
+    ORDER BY b.created_at DESC
+  `;
+  db.all(query, [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/bookings/provider', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
+  const query = `
+    SELECT b.*, u.name as tourist_name, u.email as tourist_email, p.title as package_title
+    FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    JOIN users u ON b.tourist_id = u.id
+    WHERE p.provider_id = ?
+    ORDER BY b.created_at DESC
+  `;
+  db.all(query, [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.patch('/api/bookings/:id/status', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
+  const { status } = req.body;
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status' });
+  }
+
+  // Ensure the booking belongs to a package owned by this provider
+  const verifyQuery = `
+    SELECT b.id FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.id = ? AND p.provider_id = ?
+  `;
+
+  db.get(verifyQuery, [req.params.id, req.user.id], (err, booking) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!booking) return res.status(404).json({ message: 'Booking not found or unauthorized' });
+
+    db.run(
+      "UPDATE bookings SET status = ? WHERE id = ?",
+      [status, req.params.id],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: `Booking ${status} successfully` });
+      }
+    );
   });
 });
 

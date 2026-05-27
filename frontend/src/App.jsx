@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import PendingApproval from './pages/PendingApproval'
 import SuperadminDashboard from './pages/SuperadminDashboard'
 import { TouristDashboard, ProviderDashboard } from './pages/RoleDashboards'
+import PackageDetail from './pages/PackageDetail'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/admin" element={<SuperadminDashboard />} />
         <Route path="/tourist" element={<TouristDashboard />} />
         <Route path="/provider" element={<ProviderDashboard />} />
+        <Route path="/packages/:id" element={<PackageDetail />} />
       </Routes>
     </Router>
   )
