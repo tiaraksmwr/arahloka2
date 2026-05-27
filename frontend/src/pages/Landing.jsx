@@ -59,8 +59,61 @@ function Landing() {
             <p>Pantau kondisi cuaca real-time dari Open-Meteo untuk rencana perjalanan yang sempurna.</p>
           </div>
           <div className="feature-card">
-            <h3>Journey Studio</h3>
-            <p>Abadikan dan bagikan momen perjalanan budaya Anda.</p>
+            <h3>Journey Studio Lite</h3>
+            <p>Rancang itinerary, simpan kenangan, dan bagikan cerita budaya Anda dalam satu tempat.</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="section" style={{ background: 'white' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ fontSize: '2.5rem', color: 'var(--deep-green)', marginBottom: '1.5rem' }}>ArahLoka Journey Studio</h2>
+            <p style={{ fontSize: '1.1rem', lineHeight: '1.8', color: '#666', marginBottom: '2rem' }}>
+              Ekspresikan perjalanan budaya Anda dengan fitur-fitur kreatif kami. Mulai dari perencanaan hingga berbagi inspirasi dengan sesama penjelajah budaya.
+            </p>
+            <div style={{ display: 'grid', gap: '1.5rem', marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+                <div style={{ background: 'var(--cream)', padding: '0.75rem', borderRadius: '12px' }}>🗺️</div>
+                <div>
+                  <h4 style={{ color: 'var(--burnt-orange)' }}>Smart Itinerary Planner</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#888' }}>Rencana perjalanan kurasi budaya yang efisien.</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+                <div style={{ background: 'var(--cream)', padding: '0.75rem', borderRadius: '12px' }}>📸</div>
+                <div>
+                  <h4 style={{ color: 'var(--burnt-orange)' }}>Memory Lane Card</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#888' }}>Abadikan momen berkesan dalam kartu digital eksklusif.</p>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'start' }}>
+                <div style={{ background: 'var(--cream)', padding: '0.75rem', borderRadius: '12px' }}>📖</div>
+                <div>
+                  <h4 style={{ color: 'var(--burnt-orange)' }}>Community Story Challenge</h4>
+                  <p style={{ fontSize: '0.9rem', color: '#888' }}>Bagikan cerita Anda dan temukan inspirasi baru.</p>
+                </div>
+              </div>
+            </div>
+            <Link to="/journey-studio" className="btn-register" style={{ textDecoration: 'none', display: 'inline-block' }}>Buka Journey Studio</Link>
+          </div>
+          <div style={{ position: 'relative' }}>
+            <div style={{ 
+              background: 'var(--burnt-orange)', 
+              width: '100%', 
+              height: '400px', 
+              borderRadius: '24px',
+              transform: 'rotate(-2deg)',
+              opacity: 0.1,
+              position: 'absolute',
+              top: 0,
+              left: 0
+            }}></div>
+            <img 
+              src="https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&q=80&w=800" 
+              alt="Cultural Journey" 
+              style={{ width: '100%', height: '400px', objectFit: 'cover', borderRadius: '24px', position: 'relative', boxShadow: 'var(--shadow)' }}
+            />
           </div>
         </div>
       </section>

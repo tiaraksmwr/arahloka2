@@ -88,6 +88,19 @@ function initializeDatabase() {
       FOREIGN KEY (package_id) REFERENCES packages(id)
     )`);
 
+    // Create journey_studio table
+    db.run(`CREATE TABLE IF NOT EXISTS journey_studio (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT CHECK(type IN ('itinerary', 'memory', 'story')) NOT NULL,
+      destination TEXT NOT NULL,
+      content TEXT NOT NULL,
+      rating INTEGER,
+      image_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
     // Add missing columns safely if they don't exist
     db.all("PRAGMA table_info(packages)", (err, columns) => {
       if (err) return;
@@ -477,6 +490,44 @@ app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({ image_url: imageUrl });
+});
+
+// Journey Studio Routes
+app.post('/api/journey-studio', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const { type, destination, content, rating, image_url } = req.body;
+
+  if (!['itinerary', 'memory', 'story'].includes(type)) {
+    return res.status(400).json({ message: 'Invalid type' });
+  }
+
+  db.run(
+    "INSERT INTO journey_studio (user_id, type, destination, content, rating, image_url) VALUES (?, ?, ?, ?, ?, ?)",
+    [req.user.id, type, destination, content, rating, image_url],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      res.status(201).json({ id: this.lastID, message: 'Journey content saved successfully' });
+    }
+  );
+});
+
+app.get('/api/journey-studio', (req, res) => {
+  const query = `
+    SELECT j.*, u.name as user_name 
+    FROM journey_studio j
+    JOIN users u ON j.user_id = u.id
+    ORDER BY j.created_at DESC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/journey-studio/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  db.all("SELECT * FROM journey_studio WHERE user_id = ? ORDER BY created_at DESC", [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
 });
 
 // Weather Route

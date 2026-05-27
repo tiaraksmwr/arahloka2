@@ -35,6 +35,7 @@ Aplikasi akan berjalan di [http://localhost:5173](http://localhost:5173) (atau p
 - **Health Check**: Endpoint API untuk memverifikasi status backend.
 - **Integrasi Cuaca**: Informasi cuaca real-time untuk setiap paket wisata menggunakan Open-Meteo API.
 - **Sistem Booking**: Alur lengkap untuk turis memesan paket dan penyedia jasa menyetujuinya.
+- **Journey Studio Lite**: Fitur unik untuk merancang itinerary cerdas, membuat kartu kenangan (Memory Lane), dan berbagi cerita budaya (Story Challenge).
 
 ## Teknologi
 

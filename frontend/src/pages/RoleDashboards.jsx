@@ -133,6 +133,18 @@ export const TouristDashboard = () => {
         </div>
 
         <div className="sidebar">
+          <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}>
+            <h3 style={{ marginBottom: '1rem' }}>Journey Studio</h3>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '1.5rem' }}>Rancang itinerary, simpan kenangan, dan bagikan cerita budaya Anda.</p>
+            <button 
+              onClick={() => navigate('/journey-studio')}
+              className="btn-register" 
+              style={{ width: '100%', border: 'none', cursor: 'pointer', textAlign: 'center' }}
+            >
+              Buka Journey Studio
+            </button>
+          </div>
+
           <div style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)', position: 'sticky', top: '100px' }}>
             <h3 style={{ marginBottom: '1.5rem' }}>Booking Saya</h3>
             {loading ? <p>Memuat booking...</p> : bookings.length === 0 ? <p style={{ fontSize: '0.9rem', color: '#666' }}>Belum ada booking.</p> : (

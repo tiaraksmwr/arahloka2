@@ -7,6 +7,7 @@ import PendingApproval from './pages/PendingApproval'
 import SuperadminDashboard from './pages/SuperadminDashboard'
 import { TouristDashboard, ProviderDashboard } from './pages/RoleDashboards'
 import PackageDetail from './pages/PackageDetail'
+import JourneyStudio from './pages/JourneyStudio'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/tourist" element={<TouristDashboard />} />
         <Route path="/provider" element={<ProviderDashboard />} />
         <Route path="/packages/:id" element={<PackageDetail />} />
+        <Route path="/journey-studio" element={<JourneyStudio />} />
       </Routes>
     </Router>
   )
