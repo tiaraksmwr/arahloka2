@@ -412,6 +412,85 @@ app.get('/api/admin/pending-users', authMiddleware, roleMiddleware(['superadmin'
   });
 });
 
+app.get('/api/admin/stats', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  const stats = {};
+  
+  db.serialize(() => {
+    db.get("SELECT COUNT(*) as count FROM users", (err, row) => { stats.total_users = row.count; });
+    db.get("SELECT COUNT(*) as count FROM users WHERE role = 'tourist'", (err, row) => { stats.total_tourists = row.count; });
+    db.get("SELECT COUNT(*) as count FROM users WHERE role = 'travel_provider'", (err, row) => { stats.total_providers = row.count; });
+    db.get("SELECT COUNT(*) as count FROM users WHERE role = 'travel_provider' AND status = 'pending'", (err, row) => { stats.pending_providers = row.count; });
+    db.get("SELECT COUNT(*) as count FROM users WHERE role = 'travel_provider' AND status = 'approved'", (err, row) => { stats.approved_providers = row.count; });
+    db.get("SELECT COUNT(*) as count FROM packages", (err, row) => { stats.total_packages = row.count; });
+    db.get("SELECT COUNT(*) as count FROM bookings", (err, row) => { stats.total_bookings = row.count; });
+    db.get("SELECT COUNT(*) as count FROM bookings WHERE status = 'pending'", (err, row) => { stats.pending_bookings = row.count; });
+    db.get("SELECT COUNT(*) as count FROM bookings WHERE status = 'accepted'", (err, row) => { stats.accepted_bookings = row.count; });
+    db.get("SELECT COUNT(*) as count FROM bookings WHERE status = 'rejected'", (err, row) => { stats.rejected_bookings = row.count; });
+    db.get("SELECT COUNT(*) as count FROM journey_studio WHERE type = 'memory'", (err, row) => { stats.total_memory_cards = row.count; });
+    db.get("SELECT COUNT(*) as count FROM journey_studio WHERE type = 'story'", (err, row) => { 
+      stats.total_story_challenges = row.count; 
+      res.json(stats);
+    });
+  });
+});
+
+app.get('/api/admin/users', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  db.all("SELECT id, name, email, role, status, created_at FROM users ORDER BY created_at DESC", [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/admin/packages', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  const query = `
+    SELECT p.id, p.title, p.location, p.price, p.quota, p.created_at, u.name as provider_name, u.email as provider_email
+    FROM packages p
+    LEFT JOIN users u ON p.provider_id = u.id
+    ORDER BY p.created_at DESC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/admin/bookings', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  const query = `
+    SELECT b.id, b.travel_date, b.participants, b.status, b.created_at,
+           u_tourist.name as tourist_name, u_tourist.email as tourist_email,
+           p.title as package_title,
+           u_provider.name as provider_name, u_provider.email as provider_email
+    FROM bookings b
+    JOIN users u_tourist ON b.tourist_id = u_tourist.id
+    JOIN packages p ON b.package_id = p.id
+    JOIN users u_provider ON p.provider_id = u_provider.id
+    ORDER BY b.created_at DESC
+  `;
+  db.all(query, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/admin/activity', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  const activities = [];
+  
+  db.all("SELECT 'User baru terdaftar: ' || name as text, created_at FROM users ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+    if (!err) activities.push(...rows);
+    db.all("SELECT 'Paket baru dibuat: ' || title as text, created_at FROM packages ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+      if (!err) activities.push(...rows);
+      db.all("SELECT 'Booking baru dikirim untuk ' || (SELECT title FROM packages WHERE id = package_id) as text, created_at FROM bookings ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+        if (!err) activities.push(...rows);
+        db.all("SELECT 'Story/Memory baru dibagikan: ' || title as text, created_at FROM journey_studio ORDER BY created_at DESC LIMIT 5", [], (err, rows) => {
+          if (!err) activities.push(...rows);
+          activities.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          res.json(activities.slice(0, 10));
+        });
+      });
+    });
+  });
+});
+
 app.patch('/api/admin/users/:id/approve', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
   db.run("UPDATE users SET status = 'approved' WHERE id = ?", [req.params.id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
