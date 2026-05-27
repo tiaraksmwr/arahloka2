@@ -9,36 +9,32 @@ const getFullImageUrl = (url) => {
   return `${backendUrl}${url}`
 }
 
-const StarRating = ({ rating, setRating, editable = true }) => {
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          onClick={() => editable && setRating(star)}
-          style={{
-            cursor: editable ? 'pointer' : 'default',
-            fontSize: '1.25rem',
-            color: star <= rating ? 'var(--warning)' : '#d1d5db',
-            transition: 'var(--transition)'
-          }}
-        >
-          ★
-        </span>
-      ))}
-    </div>
-  )
-}
+const StarRating = ({ rating, setRating, editable = true }) => (
+  <div style={{ display: 'flex', gap: '2px' }}>
+    {[1, 2, 3, 4, 5].map((star) => (
+      <span
+        key={star}
+        onClick={() => editable && setRating(star)}
+        style={{
+          cursor: editable ? 'pointer' : 'default',
+          fontSize: '1.1rem',
+          color: star <= rating ? 'var(--accent)' : '#d1d5db',
+          transition: 'var(--transition)'
+        }}
+      >★</span>
+    ))}
+  </div>
+)
 
-const Logo = () => (
-  <div className="flex items-center gap-2">
+const ArahLokaLogo = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
     <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" stroke="#CC5500" strokeWidth="2.5"/>
-      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#CC5500" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#CC5500"/>
+      <circle cx="20" cy="20" r="18" stroke="#B8501C" strokeWidth="2.5"/>
+      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#B8501C" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#B8501C"/>
       <circle cx="20" cy="20" r="3" fill="white"/>
     </svg>
-    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-dark)', letterSpacing: '-0.5px', fontFamily: "var(--font-serif)" }}>ArahLoka</span>
+    <span style={{ fontSize: '1.5rem', fontWeight: '900', color: '#231308', letterSpacing: '-0.5px', fontFamily: 'var(--font-serif)' }}>ArahLoka</span>
   </div>
 )
 
@@ -66,54 +62,86 @@ const JourneyStudio = () => {
     }
   }
 
+  const dashboardPath = user.role === 'tourist' ? '/tourist' : user.role === 'travel_provider' ? '/provider' : '/admin'
+
   return (
-    <div className="app">
-      <nav className="navbar-wrapper glass scrolled">
-        <div className="navbar-container">
-          <Link to="/" className="nav-logo"><Logo /></Link>
-          <div className="nav-links">
-            <Link to={user.role === 'tourist' ? '/tourist' : user.role === 'travel_provider' ? '/provider' : '/admin'}>Dashboard</Link>
-            <Link to="/journey-studio" className="active">Journey Studio</Link>
-          </div>
-          <div className="nav-actions">
-            {user.id ? (
-              <span className="text-gray" style={{ fontWeight: 700 }}>{user.name}</span>
-            ) : (
-              <Link to="/login" className="btn btn-primary">Login</Link>
-            )}
-          </div>
+    <div style={{ background: 'var(--bg-subtle)', minHeight: '100vh' }}>
+      {/* Navbar */}
+      <nav style={{
+        position: 'sticky', top: 0, zIndex: 100,
+        background: 'rgba(253,250,245,0.97)',
+        backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid var(--border-light)',
+        height: '68px',
+        display: 'flex', alignItems: 'center',
+        padding: '0 32px',
+        justifyContent: 'space-between'
+      }}>
+        <Link to="/"><ArahLokaLogo /></Link>
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+          <Link to={dashboardPath} style={{ color: 'var(--text-gray)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Dashboard</Link>
+          <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>Journey Studio</span>
+        </div>
+        <div>
+          {user.id
+            ? <span style={{ fontWeight: 700, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
+            : <Link to="/login" className="btn btn-primary" style={{ padding: '8px 20px' }}>Login</Link>
+          }
         </div>
       </nav>
 
-      <section className="section-padding" style={{ padding: '60px 0' }}>
-        <div className="container">
-          <div className="text-center mb-12">
-            <h1 style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>Journey Studio</h1>
-            <p className="text-gray" style={{ fontSize: '1.1rem', maxWidth: '700px', margin: '0 auto' }}>Simpan kenangan perjalanan Anda dan bagikan cerita budaya bersama komunitas penjelajah nusantara.</p>
-          </div>
-
-          <div className="flex justify-center gap-4 mb-12">
-            {[
-              { id: 'memory', label: 'Memory Lane', icon: '📸' },
-              { id: 'story', label: 'Community Story', icon: '📖' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`btn ${activeTab === tab.id ? 'btn-primary' : 'btn-outline'}`}
-                style={{ background: activeTab === tab.id ? 'var(--primary)' : 'white' }}
-              >
-                <span className="mr-2">{tab.icon}</span> {tab.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="animate-fade-in" style={{ minHeight: '500px' }}>
-            {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
-            {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
-          </div>
+      {/* Hero */}
+      <div style={{
+        background: 'linear-gradient(135deg, var(--secondary) 0%, #2a6b44 60%, #1a4a2e 100%)',
+        padding: '56px 32px 48px',
+        textAlign: 'center',
+        color: 'white'
+      }}>
+        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+          <span style={{
+            display: 'inline-block',
+            background: 'rgba(255,255,255,0.12)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            color: 'rgba(255,255,255,0.9)',
+            padding: '4px 14px', borderRadius: '999px',
+            fontSize: '0.72rem', fontWeight: 800,
+            textTransform: 'uppercase', letterSpacing: '1px',
+            marginBottom: '16px'
+          }}>Studio Budaya</span>
+          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '3rem', fontWeight: 800, color: 'white', marginBottom: '14px', lineHeight: 1.2 }}>
+            Journey Studio
+          </h1>
+          <p style={{ fontSize: '1.05rem', opacity: 0.85, lineHeight: 1.7, maxWidth: '560px', margin: '0 auto' }}>
+            Simpan kenangan perjalanan budaya Anda dan bagikan kisah autentik bersama komunitas penjelajah nusantara.
+          </p>
         </div>
-      </section>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 32px 0' }}>
+        <div className="studio-tabs">
+          {[
+            { id: 'memory', label: 'Memory Lane', icon: '📸' },
+            { id: 'story', label: 'Community Story', icon: '📖' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`studio-tab ${activeTab === tab.id ? 'active' : ''}`}
+            >
+              <span>{tab.icon}</span> {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 32px 80px' }}>
+        <div className="animate-fade-in">
+          {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
+          {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
+        </div>
+      </div>
     </div>
   )
 }
@@ -160,7 +188,7 @@ const MemoryLane = ({ user, bookings }) => {
   const handleSave = async (e) => {
     e.preventDefault()
     if (!user.id) return alert('Login sebagai turis untuk menyimpan kartu kenangan.')
-    
+
     setSaving(true)
     const formData = new FormData()
     formData.append('booking_id', form.booking_id)
@@ -168,9 +196,7 @@ const MemoryLane = ({ user, bookings }) => {
     formData.append('title', form.title)
     formData.append('rating', form.rating)
     formData.append('content', form.content)
-    if (imageFile) {
-      formData.append('image', imageFile)
-    }
+    if (imageFile) formData.append('image', imageFile)
 
     try {
       const token = localStorage.getItem('token')
@@ -189,13 +215,18 @@ const MemoryLane = ({ user, bookings }) => {
   }
 
   return (
-    <div className="grid grid-cols-1" style={{ gap: '4rem' }}>
-      <div className="card p-8" style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
-        <h3 className="mb-6">Buat Kartu Kenangan Baru</h3>
-        <form onSubmit={handleSave} className="grid gap-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Pilih Trip</label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+      {/* Create Form */}
+      <div style={{
+        background: 'white', borderRadius: '24px', padding: '32px',
+        border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-card)',
+        maxWidth: '760px', margin: '0 auto', width: '100%'
+      }}>
+        <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '24px' }}>Buat Kartu Kenangan Baru</h3>
+        <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Pilih Trip</label>
               <select value={form.booking_id} onChange={handleBookingChange} className="input">
                 <option value="">-- Pilih Trip Selesai --</option>
                 {bookings.filter(b => b.status === 'accepted').map(b => (
@@ -203,67 +234,76 @@ const MemoryLane = ({ user, bookings }) => {
                 ))}
               </select>
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Destinasi</label>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Destinasi</label>
               <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required className="input" placeholder="e.g. Borobudur" />
             </div>
           </div>
-          
-          <div className="grid grid-cols-1" style={{ gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Judul Kenangan</label>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Judul Kenangan</label>
               <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required className="input" placeholder="e.g. Senja di Pelataran Candi" />
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Rating</label>
-              <div style={{ paddingTop: '8px' }}><StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Rating</label>
+              <div style={{ paddingTop: '10px' }}>
+                <StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} />
+              </div>
             </div>
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Catatan Kenangan</label>
-            <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="3" className="input" style={{ resize: 'none' }} placeholder="Tuliskan momen paling berkesan..."></textarea>
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Catatan Kenangan</label>
+            <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="3" className="input" style={{ resize: 'none' }} placeholder="Tuliskan momen paling berkesan..." />
           </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Foto Perjalanan</label>
-            <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ fontSize: '0.8rem' }} />
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="form-label">Foto Perjalanan</label>
+            <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ fontSize: '0.82rem', color: 'var(--text-gray)' }} />
           </div>
 
-          <div className="flex gap-4">
-            <button type="submit" disabled={saving || !user.id} className="btn btn-primary" style={{ flex: 1, padding: '1rem' }}>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
+            <button type="submit" disabled={saving || !user.id} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
               {saving ? 'Menyimpan...' : 'Simpan ke Koleksi 📸'}
             </button>
-            <button type="button" onClick={() => { setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' }); setImageFile(null); }} className="btn btn-outline" style={{ padding: '1rem' }}>Reset</button>
+            <button type="button" onClick={() => { setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' }); setImageFile(null) }} className="btn btn-ghost" style={{ padding: '12px 20px' }}>
+              Reset
+            </button>
           </div>
         </form>
       </div>
 
+      {/* My Cards */}
       <div>
-        <h3 className="mb-8" style={{ borderBottom: '2px solid var(--primary-light)', paddingBottom: '0.5rem' }}>Koleksi Kartu Saya</h3>
-        {loading ? <p>Memuat koleksi...</p> : myCards.length === 0 ? <p className="text-gray text-center p-12">Belum ada kartu kenangan.</p> : (
-          <div className="grid grid-cols-4 gap-6">
+        <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '20px', paddingBottom: '12px', borderBottom: '2px solid var(--primary-light)' }}>
+          Koleksi Kartu Saya
+        </h3>
+        {loading ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-gray)', padding: '48px' }}>Memuat koleksi...</p>
+        ) : myCards.length === 0 ? (
+          <p style={{ textAlign: 'center', color: 'var(--text-gray)', padding: '48px' }}>Belum ada kartu kenangan.</p>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
             {myCards.map(card => (
-              <div key={card.id} className="card overflow-hidden flex flex-col">
+              <div key={card.id} className="memory-card">
                 {card.image_url && (
-                  <div style={{ height: '180px', overflow: 'hidden' }}>
-                    <img 
-                      src={getFullImageUrl(card.image_url)} 
-                      className="w-full h-full" 
-                      style={{ objectFit: 'cover' }}
-                      alt={card.title} 
-                      onError={(e) => e.target.style.display = 'none'} 
+                  <div className="memory-card-img">
+                    <img
+                      src={getFullImageUrl(card.image_url)}
+                      alt={card.title}
+                      onError={(e) => e.target.style.display = 'none'}
                     />
                   </div>
                 )}
-                <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-2">
+                <div className="memory-card-body">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px' }}>
                     <span style={{ fontSize: '0.65rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase' }}>📍 {card.destination}</span>
                     <StarRating rating={card.rating} editable={false} />
                   </div>
-                  <h4 className="mb-2" style={{ fontFamily: 'var(--font-sans)', fontWeight: 800 }}>{card.title}</h4>
-                  <p className="text-gray" style={{ fontSize: '0.85rem', fontStyle: 'italic', lineHeight: '1.6' }}>"{card.content}"</p>
-                  <div style={{ marginTop: 'auto', paddingTop: '1rem', fontSize: '0.7rem', color: 'var(--text-light)', textAlign: 'right' }}>
+                  <div style={{ fontWeight: 800, fontSize: '0.92rem', marginBottom: '6px', lineHeight: 1.3 }}>{card.title}</div>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-gray)', fontStyle: 'italic', lineHeight: 1.6, flex: 1 }}>"{card.content}"</p>
+                  <div style={{ marginTop: '12px', fontSize: '0.68rem', color: 'var(--text-light)', textAlign: 'right' }}>
                     {new Date(card.created_at).toLocaleDateString('id-ID')}
                   </div>
                 </div>
@@ -311,7 +351,7 @@ const StoryChallenge = ({ user, bookings }) => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!user.id) return alert('Login sebagai turis untuk membagikan cerita.')
-    
+
     setSubmitting(true)
     const formData = new FormData()
     formData.append('booking_id', form.booking_id)
@@ -319,9 +359,7 @@ const StoryChallenge = ({ user, bookings }) => {
     formData.append('title', form.title)
     formData.append('rating', form.rating)
     formData.append('content', form.content)
-    if (imageFile) {
-      formData.append('image', imageFile)
-    }
+    if (imageFile) formData.append('image', imageFile)
 
     try {
       const token = localStorage.getItem('token')
@@ -340,57 +378,83 @@ const StoryChallenge = ({ user, bookings }) => {
   }
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: '1.6fr 1fr', gap: '3rem' }}>
-      <div className="grid gap-8">
-        <div className="card p-8" style={{ background: 'var(--secondary)', color: 'white' }}>
-          <h3 className="mb-2" style={{ color: 'white' }}>Community Story Challenge</h3>
-          <h4 className="mb-4" style={{ color: 'var(--primary)', fontWeight: 800 }}>TEMA: KEAJAIBAN BUDAYA LOKAL</h4>
-          <p style={{ opacity: 0.9, lineHeight: '1.7' }}>Bagikan pengalaman autentik Anda. Cerita terbaik akan mendapatkan apresiasi dan menjadi inspirasi bagi penjelajah lainnya!</p>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '32px' }}>
+      {/* Stories Feed */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Challenge Banner */}
+        <div style={{
+          background: 'linear-gradient(135deg, var(--secondary) 0%, #1a4a2e 100%)',
+          borderRadius: '20px', padding: '28px 32px', color: 'white'
+        }}>
+          <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', opacity: 0.7, marginBottom: '8px' }}>
+            Community Challenge
+          </div>
+          <h3 style={{ color: 'white', fontFamily: 'var(--font-serif)', fontSize: '1.4rem', marginBottom: '6px' }}>
+            Community Story Challenge
+          </h3>
+          <div style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '0.9rem', marginBottom: '10px' }}>
+            TEMA: KEAJAIBAN BUDAYA LOKAL
+          </div>
+          <p style={{ opacity: 0.88, lineHeight: 1.7, fontSize: '0.92rem' }}>
+            Bagikan pengalaman autentik Anda. Cerita terbaik akan mendapatkan apresiasi dan menjadi inspirasi bagi penjelajah lainnya!
+          </p>
         </div>
-        
-        {loading ? <p>Memuat inspirasi...</p> : stories.map(story => (
-          <div key={story.id} className="card p-8">
-            <div className="flex justify-between items-start mb-6">
+
+        {loading ? (
+          <p style={{ padding: '32px', textAlign: 'center', color: 'var(--text-gray)' }}>Memuat inspirasi...</p>
+        ) : stories.map(story => (
+          <div key={story.id} style={{
+            background: 'white', borderRadius: '20px', padding: '28px',
+            border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-card)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <h4 className="mb-1" style={{ color: 'var(--primary)', fontSize: '1.5rem', fontWeight: 800 }}>{story.title}</h4>
-                <span className="text-gray" style={{ fontWeight: 700, fontSize: '0.85rem' }}>📍 {story.destination}</span>
+                <h4 style={{ color: 'var(--primary)', fontSize: '1.35rem', fontWeight: 800, fontFamily: 'var(--font-serif)', marginBottom: '4px' }}>{story.title}</h4>
+                <span style={{ color: 'var(--text-gray)', fontWeight: 700, fontSize: '0.82rem' }}>📍 {story.destination}</span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 800, color: 'var(--secondary)' }}>{story.user_name}</div>
+                <div style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '0.92rem' }}>{story.user_name}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-light)' }}>{new Date(story.created_at).toLocaleDateString('id-ID')}</div>
               </div>
             </div>
-            
-            <div className="mb-4"><StarRating rating={story.rating} editable={false} /></div>
-            
-            <p style={{ lineHeight: '1.8', color: 'var(--text-dark)', fontSize: '1.05rem', whiteSpace: 'pre-line' }}>{story.content}</p>
-            
+
+            <div style={{ marginBottom: '12px' }}>
+              <StarRating rating={story.rating} editable={false} />
+            </div>
+
+            <p style={{ lineHeight: 1.85, color: 'var(--text-dark)', fontSize: '1rem', whiteSpace: 'pre-line' }}>
+              {story.content}
+            </p>
+
             {story.image_url && (
-              <div className="mt-8 overflow-hidden rounded-2xl shadow-lg">
-                <img 
-                  src={getFullImageUrl(story.image_url)} 
-                  className="w-full"
-                  style={{ maxHeight: '450px', objectFit: 'cover' }} 
-                  alt={story.title} 
+              <div style={{ marginTop: '20px', borderRadius: '14px', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+                <img
+                  src={getFullImageUrl(story.image_url)}
+                  style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
+                  alt={story.title}
                   onError={(e) => e.target.style.display = 'none'}
                 />
               </div>
             )}
-            
-            <div className="mt-8 pt-6 border-t flex gap-6">
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-gray)', fontWeight: 700, cursor: 'pointer' }}>❤️ Suka</button>
-              <button style={{ background: 'none', border: 'none', color: 'var(--text-gray)', fontWeight: 700, cursor: 'pointer' }}>💬 Diskusi</button>
+
+            <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '20px' }}>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-gray)', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}>❤️ Suka</button>
+              <button style={{ background: 'none', border: 'none', color: 'var(--text-gray)', fontWeight: 700, cursor: 'pointer', fontSize: '0.875rem' }}>💬 Diskusi</button>
             </div>
           </div>
         ))}
       </div>
 
-      <div style={{ position: 'sticky', top: '100px' }}>
-        <div className="card p-8">
-          <h3 className="mb-6">Tulis Kisah Anda</h3>
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Pilih Booking</label>
+      {/* Write Story Form */}
+      <div style={{ position: 'sticky', top: '88px', height: 'fit-content' }}>
+        <div style={{
+          background: 'white', borderRadius: '24px', padding: '28px',
+          border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-card)'
+        }}>
+          <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '20px' }}>Tulis Kisah Anda</h3>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Pilih Booking</label>
               <select value={form.booking_id} onChange={handleBookingChange} className="input">
                 <option value="">-- Pilih Trip --</option>
                 {bookings.filter(b => b.status === 'accepted').map(b => (
@@ -398,26 +462,29 @@ const StoryChallenge = ({ user, bookings }) => {
                 ))}
               </select>
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Destinasi & Judul</label>
-              <div className="grid gap-2">
-                <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required className="input" placeholder="Lokasi..." />
-                <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required className="input" placeholder="Judul kisah..." />
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Destinasi</label>
+              <input type="text" value={form.destination} onChange={e => setForm({...form, destination: e.target.value})} required className="input" placeholder="Lokasi..." />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Judul Kisah</label>
+              <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required className="input" placeholder="Judul yang menarik..." />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Rating</label>
+              <div style={{ paddingTop: '8px' }}>
+                <StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} />
               </div>
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Rating</label>
-              <div style={{ paddingTop: '8px' }}><StarRating rating={form.rating} setRating={(r) => setForm({ ...form, rating: r })} /></div>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Isi Cerita</label>
+              <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="6" className="input" style={{ resize: 'none' }} placeholder="Bagikan pengalaman unik Anda..." />
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Isi Cerita</label>
-              <textarea value={form.content} onChange={e => setForm({...form, content: e.target.value})} required rows="6" className="input" style={{ resize: 'none' }} placeholder="Bagikan pengalaman unik Anda..."></textarea>
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">Upload Foto</label>
+              <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }} />
             </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Upload Foto</label>
-              <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ fontSize: '0.8rem' }} />
-            </div>
-            <button type="submit" disabled={submitting || !user.id} className="btn btn-primary w-full" style={{ padding: '1rem' }}>
+            <button type="submit" disabled={submitting || !user.id} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '4px' }}>
               {submitting ? 'Mengirim...' : 'Kirim Kisah 🚀'}
             </button>
           </form>

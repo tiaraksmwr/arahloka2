@@ -21,7 +21,7 @@ const Logo = ({ light = false }) => (
 
 function Landing() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const heroImage = 'https://images.unsplash.com/photo-1605634509531-9252bc30541c?auto=format&fit=crop&q=85&w=1920';
+  const heroRightImg = 'https://images.unsplash.com/photo-1596402184320-417d717867cd?auto=format&fit=crop&q=85&w=800&h=960';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -70,26 +70,27 @@ function Landing() {
       <nav className={`navbar-wrapper ${isScrolled ? 'scrolled' : 'nav-transparent'}`}>
         <div className="navbar-container">
           <Link to="/" className="nav-logo">
-            <Logo light={!isScrolled} />
+            <Logo />
           </Link>
           <div className="nav-links">
-            <a href="#" className={`active ${!isScrolled ? 'nav-link-light' : ''}`}>Home</a>
-            <a href="#explore" className={!isScrolled ? 'nav-link-light' : ''}>Explore</a>
-            <a href="#community" className={!isScrolled ? 'nav-link-light' : ''}>Community</a>
-            <a href="#events" className={!isScrolled ? 'nav-link-light' : ''}>Events</a>
+            <a href="#" className="active">Home</a>
+            <a href="#explore">Explore</a>
+            <a href="#community">Community</a>
+            <a href="#events">Cultural Events</a>
           </div>
           <div className="nav-actions flex items-center gap-4">
-            <Link to="/login" className={`btn ${!isScrolled ? 'btn-outline-light' : 'btn-outline'}`} style={{ padding: '0.6rem 1.8rem' }}>Login</Link>
+            <Link to="/login" className="btn btn-outline" style={{ padding: '0.6rem 1.8rem' }}>Login</Link>
             <Link to="/register" className="btn btn-primary" style={{ padding: '0.6rem 1.8rem' }}>Daftar</Link>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <header className="hero-section" style={{ backgroundImage: `url(${heroImage})` }}>
-        <div className="hero-overlay"></div>
-        <div className="container hero-container">
-          <div className="hero-content-wrapper animate-fade-in">
+      <header className="hero-section">
+        <div className="hero-bg-orb hero-orb-1"></div>
+        <div className="hero-bg-orb hero-orb-2"></div>
+        <div className="container">
+          <div className="hero-split animate-fade-in">
             <div className="hero-text-side">
               <div className="hero-badge">
                 <span className="badge-pulse"></span>
@@ -100,9 +101,9 @@ function Landing() {
                 <svg viewBox="0 0 480 18" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
                   {Array.from({ length: 24 }).map((_, i) => (
                     <g key={i} transform={`translate(${i * 20}, 0)`}>
-                      <path d="M0,9 Q5,0 10,9 Q15,18 20,9" stroke="rgba(196,144,48,0.7)" strokeWidth="1.2" fill="none"/>
-                      <circle cx="10" cy="9" r="1.5" fill="rgba(196,144,48,0.5)"/>
-                      <circle cx="0" cy="9" r="1" fill="rgba(196,144,48,0.35)"/>
+                      <path d="M0,9 Q5,0 10,9 Q15,18 20,9" stroke="rgba(184,80,28,0.5)" strokeWidth="1.2" fill="none"/>
+                      <circle cx="10" cy="9" r="1.5" fill="rgba(184,80,28,0.35)"/>
+                      <circle cx="0" cy="9" r="1" fill="rgba(184,80,28,0.2)"/>
                     </g>
                   ))}
                 </svg>
@@ -120,25 +121,23 @@ function Landing() {
                 </Link>
                 <a href="#explore" className="btn btn-hero-outline">Jelajahi Destinasi</a>
               </div>
+              <div className="hero-stats-float">
+                {stats.map((s, i) => (
+                  <div key={i} className="hero-stat-chip">
+                    <span className="hero-stat-num">{s.number}</span>
+                    <span className="hero-stat-lbl">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="hero-image-side">
+              <img
+                src={heroRightImg}
+                alt="Candi Borobudur, Jawa Tengah"
+                className="hero-img-card"
+              />
             </div>
           </div>
-
-          {/* Floating Stats */}
-          <div className="hero-stats-float">
-            {stats.map((s, i) => (
-              <div key={i} className="hero-stat-chip">
-                <span className="hero-stat-num">{s.number}</span>
-                <span className="hero-stat-lbl">{s.label}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="hero-scroll-hint">
-          <div className="scroll-mouse">
-            <div className="scroll-wheel"></div>
-          </div>
-          <span>Scroll</span>
         </div>
       </header>
 

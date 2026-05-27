@@ -2,21 +2,24 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
-const Logo = () => (
-  <div className="flex items-center gap-2">
-    <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" stroke="#CC5500" strokeWidth="2.5"/>
-      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#CC5500" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#CC5500"/>
+const ArahLokaLogo = () => (
+  <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+    <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="#B8501C" strokeWidth="2.5"/>
+      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#B8501C" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#B8501C"/>
       <circle cx="20" cy="20" r="3" fill="white"/>
     </svg>
-    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-dark)', letterSpacing: '-0.5px', fontFamily: "var(--font-serif)" }}>ArahLoka</span>
+    <span style={{ fontSize: '1.25rem', fontWeight: '900', color: 'var(--text-dark)', letterSpacing: '-0.5px', fontFamily: 'var(--font-serif)' }}>ArahLoka</span>
   </div>
 )
 
-const DashboardLayout = ({ title, children, role }) => {
+const DashboardLayout = ({ title, subtitle, children, role }) => {
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const initials = user.name
+    ? user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U'
 
   const handleLogout = () => {
     localStorage.removeItem('token')
@@ -24,43 +27,61 @@ const DashboardLayout = ({ title, children, role }) => {
     navigate('/login')
   }
 
+  const navLinks = role === 'tourist'
+    ? [
+        { to: '/tourist', label: 'Dashboard', icon: '◫' },
+        { to: '/journey-studio', label: 'Journey Studio', icon: '◎' },
+      ]
+    : [
+        { to: '/provider', label: 'Dashboard', icon: '◫' },
+      ]
+
   return (
-    <div className="dashboard-layout" style={{ gridTemplateColumns: '260px 1fr' }}>
-      <aside className="dashboard-sidebar">
-        <div className="mb-8 px-4">
-          <Link to="/"><Logo light /></Link>
-          <p style={{ fontSize: '0.7rem', opacity: 0.6, marginTop: '0.5rem', fontWeight: 700, textTransform: 'uppercase' }}>{role} PORTAL</p>
-        </div>
-        
-        <div className="sidebar-nav">
-          <Link to={role === 'tourist' ? '/tourist' : '/provider'} className="sidebar-link active">
-            <span>🏠</span> Dashboard
-          </Link>
-          {role === 'tourist' && (
-            <>
-              <Link to="/journey-studio" className="sidebar-link"><span>📸</span> Journey Studio</Link>
-              <a href="#explore" className="sidebar-link"><span>🌍</span> Eksplorasi</a>
-            </>
-          )}
-          <a href="#" className="sidebar-link"><span>⚙️</span> Pengaturan</a>
+    <div className="db-layout">
+      <aside className="db-sidebar">
+        <div className="db-sidebar-brand">
+          <Link to="/"><ArahLokaLogo /></Link>
+          <div className="db-sidebar-role">{role === 'tourist' ? 'Tourist Portal' : 'Provider Portal'}</div>
         </div>
 
-        <div style={{ marginTop: 'auto', paddingTop: '2rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-          <div className="px-4 mb-4">
-            <p style={{ fontSize: '0.8rem', opacity: 0.6 }}>Login sebagai:</p>
-            <p style={{ fontSize: '0.9rem', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user.name}</p>
+        <nav className="db-sidebar-nav">
+          {navLinks.map(link => (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={`db-sidebar-link ${window.location.pathname === link.to ? 'active' : ''}`}
+            >
+              <span className="db-sidebar-icon">{link.icon}</span>
+              {link.label}
+            </Link>
+          ))}
+          <a href="#" className="db-sidebar-link">
+            <span className="db-sidebar-icon">⚙</span>
+            Pengaturan
+          </a>
+        </nav>
+
+        <div className="db-sidebar-footer">
+          <div className="db-sidebar-user">
+            <div className="db-sidebar-avatar">{initials}</div>
+            <div style={{ minWidth: 0 }}>
+              <div className="db-sidebar-username">{user.name}</div>
+              <div className="db-sidebar-useremail">{user.email}</div>
+            </div>
           </div>
-          <button onClick={handleLogout} className="sidebar-link" style={{ border: 'none', background: 'none', color: 'white', width: '100%', cursor: 'pointer', textAlign: 'left' }}>
-            <span>🚪</span> Logout
+          <button onClick={handleLogout} className="db-sidebar-logout">
+            Keluar
           </button>
         </div>
       </aside>
 
-      <main className="dashboard-main">
-        <header className="mb-8">
-          <h2 style={{ fontSize: '2rem' }}>{title}</h2>
-          <p className="text-gray">Kelola aktivitas dan perjalanan Anda dengan mudah.</p>
-        </header>
+      <main className="db-main">
+        <div className="db-page-header">
+          <div>
+            <h1 className="db-page-title">{title}</h1>
+            {subtitle && <p className="db-page-sub">{subtitle}</p>}
+          </div>
+        </div>
         {children}
       </main>
     </div>
@@ -101,73 +122,63 @@ export const TouristDashboard = () => {
     }
   }
 
-  const filteredPackages = packages.filter(pkg => 
+  const filteredPackages = packages.filter(pkg =>
     pkg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     pkg.location.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const getStatusBadge = (status) => {
-    const styles = {
-      pending: { bg: '#fffbeb', color: '#92400e', label: 'Menunggu' },
-      accepted: { bg: '#dcfce7', color: '#166534', label: 'Diterima' },
-      rejected: { bg: '#fee2e2', color: '#991b1b', label: 'Ditolak' }
-    }
-    const style = styles[status] || styles.pending
-    return (
-      <span style={{ 
-        padding: '4px 10px', 
-        borderRadius: '6px', 
-        fontSize: '0.7rem', 
-        fontWeight: 800,
-        backgroundColor: style.bg,
-        color: style.color,
-        textTransform: 'uppercase'
-      }}>
-        {style.label}
-      </span>
-    )
-  }
+  const statusLabel = { pending: 'Menunggu', accepted: 'Diterima', rejected: 'Ditolak' }
 
   return (
-    <DashboardLayout title="Eksplorasi Budaya" role="Tourist">
-      <div className="grid" style={{ gridTemplateColumns: '1fr 320px', gap: '2rem' }}>
+    <DashboardLayout
+      title="Eksplorasi Budaya"
+      subtitle={`Selamat datang, ${user.name}. Temukan destinasi budaya terbaik.`}
+      role="tourist"
+    >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+        {/* Left: Package Explorer */}
         <div>
-          <div className="card p-6 mb-8 flex gap-4 items-center">
-            <div style={{ flex: 1 }}>
-              <input 
-                type="text" 
-                placeholder="Cari destinasi atau paket budaya..." 
-                className="input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <button className="btn btn-primary">Cari 🔍</button>
+          {/* Search */}
+          <div className="db-section" style={{ marginBottom: '24px', padding: '18px 22px', display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Cari destinasi atau paket budaya..."
+              className="input"
+              style={{ flex: 1, margin: 0 }}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <button className="btn btn-primary" style={{ flexShrink: 0, padding: '0 20px' }}>Cari</button>
           </div>
 
-          <h3 className="mb-6">Paket Wisata Pilihan</h3>
-          {loading ? <p>Memuat paket...</p> : (
-            <div className="grid grid-cols-2 gap-6">
+          {/* Packages */}
+          <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px 12px' }}>
+            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', fontWeight: 700 }}>Paket Wisata Pilihan</h3>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>{filteredPackages.length} paket tersedia</span>
+          </div>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-gray)' }}>Memuat paket...</div>
+          ) : (
+            <div className="pkg-grid">
               {filteredPackages.map(pkg => (
-                <div key={pkg.id} className="card overflow-hidden">
-                  <div style={{ height: '200px', overflow: 'hidden', position: 'relative' }}>
-                    <img src={pkg.image_url || 'https://via.placeholder.com/400x200'} alt={pkg.title} className="w-full h-full" style={{ objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', top: '12px', left: '12px', background: 'rgba(255,255,255,0.9)', padding: '4px 12px', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 800 }}>
-                      📍 {pkg.location}
-                    </div>
+                <div key={pkg.id} className="pkg-card">
+                  <div className="pkg-img-wrap">
+                    <img src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70'} alt={pkg.title} />
+                    <span className="pkg-loc-badge">📍 {pkg.location}</span>
                   </div>
-                  <div className="p-6">
-                    <h4 className="mb-2" style={{ fontFamily: 'var(--font-sans)', fontSize: '1.25rem', fontWeight: 800 }}>{pkg.title}</h4>
-                    <p className="text-gray mb-6" style={{ fontSize: '0.9rem', height: '2.7rem', overflow: 'hidden' }}>{pkg.description}</p>
-                    <div className="flex justify-between items-center pt-4 border-t">
+                  <div className="pkg-body">
+                    <div className="pkg-title">{pkg.title}</div>
+                    <div className="pkg-desc">{pkg.description}</div>
+                    <div className="pkg-footer">
                       <div>
-                        <p style={{ fontSize: '0.7rem', color: 'var(--text-light)', fontWeight: 700, textTransform: 'uppercase' }}>Harga</p>
-                        <p style={{ fontWeight: 800, color: 'var(--secondary)' }}>Rp {pkg.price.toLocaleString('id-ID')}</p>
+                        <div className="pkg-price-label">Harga / orang</div>
+                        <div className="pkg-price">Rp {pkg.price.toLocaleString('id-ID')}</div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => navigate(`/packages/${pkg.id}`)}
-                        className="btn btn-outline" 
-                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                        className="btn btn-outline"
+                        style={{ padding: '6px 16px', fontSize: '0.82rem' }}
                       >
                         Detail
                       </button>
@@ -179,56 +190,77 @@ export const TouristDashboard = () => {
           )}
         </div>
 
+        {/* Right: Sidebar */}
         <aside>
-          <div className="card p-6 mb-8" style={{ background: 'var(--secondary)', color: 'white' }}>
-            <h3 className="mb-2" style={{ color: 'white' }}>Journey Studio</h3>
-            <p style={{ fontSize: '0.9rem', opacity: 0.8, marginBottom: '1.5rem' }}>Abadikan momen berharga dan bagikan kisah budaya Anda.</p>
-            <button 
+          {/* Journey Studio Promo */}
+          <div style={{
+            background: 'linear-gradient(135deg, var(--secondary) 0%, #2a6b44 100%)',
+            borderRadius: '20px',
+            padding: '24px',
+            marginBottom: '20px',
+            color: 'white'
+          }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.7, marginBottom: '8px' }}>Feature</div>
+            <h3 style={{ color: 'white', fontSize: '1.15rem', marginBottom: '8px', fontFamily: 'var(--font-serif)' }}>Journey Studio</h3>
+            <p style={{ fontSize: '0.84rem', opacity: 0.85, lineHeight: 1.6, marginBottom: '18px' }}>Abadikan dan bagikan kisah budaya dari perjalanan Anda.</p>
+            <button
               onClick={() => navigate('/journey-studio')}
-              className="btn btn-primary w-full"
-              style={{ background: 'white', color: 'var(--secondary)' }}
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.3)', width: '100%', backdropFilter: 'blur(8px)', fontWeight: 700 }}
             >
               Buka Studio 📸
             </button>
           </div>
 
-          <div className="card p-6">
-            <h3 className="mb-6">Booking Saya</h3>
-            {loading ? <p>Memuat...</p> : bookings.length === 0 ? <p className="text-gray text-center p-8">Belum ada booking.</p> : (
-              <div className="flex flex-col gap-4">
-                {bookings.map(booking => (
-                  <div key={booking.id} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '16px', background: booking.status === 'pending' ? 'var(--primary-light)' : 'white' }}>
-                    <div className="flex justify-between items-start mb-2">
-                      <h5 style={{ margin: 0, fontWeight: 800 }}>{booking.title}</h5>
-                      {getStatusBadge(booking.status)}
-                    </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-gray)', marginBottom: '1rem' }}>
-                      <p>📅 {booking.travel_date}</p>
-                      <p>👥 {booking.participants} Orang</p>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <button 
-                        onClick={() => navigate(`/trip-planner/${booking.id}`)}
-                        disabled={booking.status === 'rejected'}
-                        className="btn btn-outline w-full"
-                        style={{ fontSize: '0.8rem', padding: '0.5rem' }}
-                      >
-                        Persiapan Trip
-                      </button>
-                      {booking.status === 'accepted' && (
-                        <button 
-                          onClick={() => navigate('/journey-studio')}
-                          className="btn btn-primary w-full"
-                          style={{ fontSize: '0.8rem', padding: '0.5rem' }}
-                        >
-                          Buat Memory Card
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+          {/* My Bookings */}
+          <div className="db-section">
+            <div className="db-section-head">
+              <div>
+                <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1rem', color: 'var(--text-dark)' }}>Booking Saya</div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>{bookings.length} perjalanan</div>
               </div>
-            )}
+            </div>
+            <div style={{ padding: '16px' }}>
+              {loading ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-gray)', padding: '24px 0', fontSize: '0.85rem' }}>Memuat...</p>
+              ) : bookings.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-gray)', padding: '24px 0', fontSize: '0.85rem' }}>Belum ada booking.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {bookings.map(booking => (
+                    <div key={booking.id} className={`booking-card ${booking.status}`}>
+                      <div className="booking-card-header">
+                        <div className="booking-title">{booking.title}</div>
+                        <span className={`badge badge-${booking.status}`}>{statusLabel[booking.status]}</span>
+                      </div>
+                      <div className="booking-meta">
+                        <p>📅 {booking.travel_date}</p>
+                        <p>👥 {booking.participants} orang</p>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '10px' }}>
+                        <button
+                          onClick={() => navigate(`/trip-planner/${booking.id}`)}
+                          disabled={booking.status === 'rejected'}
+                          className="btn btn-outline"
+                          style={{ width: '100%', padding: '6px', fontSize: '0.78rem' }}
+                        >
+                          Persiapan Trip
+                        </button>
+                        {booking.status === 'accepted' && (
+                          <button
+                            onClick={() => navigate('/journey-studio')}
+                            className="btn btn-primary"
+                            style={{ width: '100%', padding: '6px', fontSize: '0.78rem' }}
+                          >
+                            Buat Memory Card
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </aside>
       </div>
@@ -299,9 +331,9 @@ export const ProviderDashboard = () => {
     try {
       const token = localStorage.getItem('token')
       const response = await axios.post(`${import.meta.env.VITE_API_URL}/upload`, data, {
-        headers: { 
+        headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}` 
+          Authorization: `Bearer ${token}`
         }
       })
       setFormData({ ...formData, image_url: response.data.image_url })
@@ -328,17 +360,7 @@ export const ProviderDashboard = () => {
         alert('Paket berhasil ditambahkan')
       }
       setEditingId(null)
-      setFormData({
-        title: '',
-        location: '',
-        description: '',
-        duration: '',
-        price: '',
-        quota: '',
-        image_url: '',
-        latitude: '',
-        longitude: ''
-      })
+      setFormData({ title: '', location: '', description: '', duration: '', price: '', quota: '', image_url: '', latitude: '', longitude: '' })
       fetchData()
     } catch (err) {
       alert('Gagal menyimpan paket')
@@ -389,142 +411,190 @@ export const ProviderDashboard = () => {
   const stats = [
     { label: 'Paket Aktif', value: packages.length, color: 'var(--primary)', icon: '🗺️' },
     { label: 'Total Booking', value: bookings.length, color: 'var(--secondary)', icon: '📅' },
-    { label: 'Booking Pending', value: bookings.filter(b => b.status === 'pending').length, color: 'var(--warning)', icon: '🕒' },
-    { label: 'Status Akun', value: user.status?.toUpperCase(), color: '#10b981', icon: '🛡️' }
+    { label: 'Booking Pending', value: bookings.filter(b => b.status === 'pending').length, color: 'var(--warning)', icon: '⏳' },
+    { label: 'Status Akun', value: user.status?.toUpperCase(), color: 'var(--success)', icon: '✅' }
   ]
 
   return (
-    <DashboardLayout title="Manajemen Travel" role="Provider">
-      <div className="stat-grid">
+    <DashboardLayout
+      title="Manajemen Travel"
+      subtitle={`Halo, ${user.name}. Kelola paket dan pesanan Anda.`}
+      role="provider"
+    >
+      {/* Stats */}
+      <div className="db-stat-grid" style={{ marginBottom: '28px' }}>
         {stats.map((s, i) => (
-          <div key={i} className="stat-card" style={{ borderTopColor: s.color }}>
-            <div className="flex justify-between items-start mb-4">
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-light)', fontWeight: 700 }}>{s.label}</span>
-              <span style={{ fontSize: '1.25rem' }}>{s.icon}</span>
+          <div key={i} className="db-stat-card" style={{ '--stat-color': s.color }}>
+            <div className="db-stat-header">
+              <div className="db-stat-label">{s.label}</div>
+              <div className="db-stat-icon" style={{ background: `color-mix(in srgb, ${s.color} 10%, white)` }}>{s.icon}</div>
             </div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, color: s.color }}>{s.value}</div>
+            <div className="db-stat-value">{s.value ?? 0}</div>
           </div>
         ))}
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: '1.5fr 1fr', gap: '2rem', marginBottom: '3rem' }}>
-        <div className="card p-8">
-          <div className="mb-6">
-            <h3>Booking Masuk</h3>
-            <p className="text-gray text-sm">Kelola pesanan dari para turis.</p>
+      {/* Booking + Form Row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '24px', marginBottom: '28px' }}>
+        {/* Incoming Bookings */}
+        <div className="db-section">
+          <div className="db-section-head">
+            <div>
+              <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>Booking Masuk</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>Kelola pesanan dari para turis</div>
+            </div>
           </div>
-          {loading ? <p>Memuat...</p> : bookings.length === 0 ? <p className="text-center p-8 text-gray">Belum ada booking.</p> : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Turis</th>
-                    <th>Paket</th>
-                    <th>Status</th>
-                    <th style={{ textAlign: 'right' }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map(booking => (
-                    <tr key={booking.id}>
-                      <td>
-                        <div style={{ fontWeight: 700 }}>{booking.tourist_name}</div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-light)' }}>{booking.travel_date}</div>
-                      </td>
-                      <td><div style={{ fontSize: '0.9rem', fontWeight: 500 }}>{booking.package_title}</div></td>
-                      <td>
-                        <span style={{ 
-                          padding: '4px 8px', 
-                          borderRadius: '4px', 
-                          fontSize: '0.65rem', 
-                          fontWeight: 800,
-                          background: booking.status === 'pending' ? '#fffbeb' : booking.status === 'accepted' ? '#dcfce7' : '#fee2e2',
-                          color: booking.status === 'pending' ? '#92400e' : booking.status === 'accepted' ? '#166534' : '#991b1b'
-                        }}>
-                          {booking.status.toUpperCase()}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        {booking.status === 'pending' && (
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={() => handleBookingStatus(booking.id, 'accepted')} className="btn btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', background: 'var(--success)' }}>✔</button>
-                            <button onClick={() => handleBookingStatus(booking.id, 'rejected')} className="btn btn-outline" style={{ padding: '0.3rem 0.6rem', fontSize: '0.7rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}>✖</button>
-                          </div>
-                        )}
-                      </td>
+          <div style={{ padding: '0 4px' }}>
+            {loading ? (
+              <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-gray)' }}>Memuat...</p>
+            ) : bookings.length === 0 ? (
+              <p style={{ padding: '32px', textAlign: 'center', color: 'var(--text-gray)' }}>Belum ada booking.</p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Turis</th>
+                      <th>Paket</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Aksi</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {bookings.map(booking => (
+                      <tr key={booking.id}>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{booking.tourist_name}</div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-light)' }}>{booking.travel_date}</div>
+                        </td>
+                        <td style={{ fontSize: '0.9rem' }}>{booking.package_title}</td>
+                        <td>
+                          <span className={`badge badge-${booking.status}`}>
+                            {booking.status === 'pending' ? 'Menunggu' : booking.status === 'accepted' ? 'Diterima' : 'Ditolak'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          {booking.status === 'pending' && (
+                            <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                              <button
+                                onClick={() => handleBookingStatus(booking.id, 'accepted')}
+                                className="btn btn-success"
+                                style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                              >Setujui</button>
+                              <button
+                                onClick={() => handleBookingStatus(booking.id, 'rejected')}
+                                className="btn btn-danger"
+                                style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                              >Tolak</button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Package Form */}
+        <div className="db-section">
+          <div className="db-section-head">
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>
+              {editingId ? 'Edit Paket' : 'Tambah Paket Baru'}
+            </div>
+          </div>
+          <div style={{ padding: '20px 24px' }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Judul Paket</label>
+                <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="input" placeholder="e.g. Ritual Kejawen Yogyakarta" />
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Lokasi</label>
+                  <input type="text" name="location" value={formData.location} onChange={handleInputChange} required className="input" placeholder="Kota/Daerah" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Durasi</label>
+                  <input type="text" name="duration" value={formData.duration} onChange={handleInputChange} required className="input" placeholder="e.g. 3H 2M" />
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Harga (Rp)</label>
+                  <input type="number" name="price" value={formData.price} onChange={handleInputChange} required className="input" />
+                </div>
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Kuota</label>
+                  <input type="number" name="quota" value={formData.quota} onChange={handleInputChange} required className="input" />
+                </div>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Deskripsi</label>
+                <textarea name="description" value={formData.description} onChange={handleInputChange} className="input" rows="2" style={{ resize: 'none' }} placeholder="Deskripsi singkat paket..." />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Gambar Paket</label>
+                <input type="file" onChange={handleFileUpload} accept="image/*" style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }} />
+                {uploading && <p style={{ fontSize: '0.72rem', color: 'var(--primary)', marginTop: '4px' }}>Mengunggah...</p>}
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
+                {editingId ? 'Simpan Perubahan' : 'Publish Paket'}
+              </button>
+              {editingId && (
+                <button type="button" onClick={() => { setEditingId(null); setFormData({ title: '', location: '', description: '', duration: '', price: '', quota: '', image_url: '', latitude: '', longitude: '' }) }} className="btn btn-ghost" style={{ width: '100%' }}>
+                  Batal Edit
+                </button>
+              )}
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Package Catalog */}
+      <div className="db-section">
+        <div className="db-section-head">
+          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>Katalog Paket Saya</div>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>{packages.length} paket aktif</span>
+        </div>
+        <div style={{ padding: '16px' }}>
+          {packages.length === 0 ? (
+            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-gray)' }}>Belum ada paket. Tambahkan paket pertama Anda di atas.</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
+              {packages.map(pkg => (
+                <div key={pkg.id} style={{
+                  display: 'flex',
+                  gap: '14px',
+                  alignItems: 'center',
+                  padding: '14px',
+                  background: 'var(--bg-surface)',
+                  borderRadius: '14px',
+                  border: '1px solid var(--border-light)'
+                }}>
+                  <img
+                    src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=120&q=70'}
+                    alt={pkg.title}
+                    style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pkg.title}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-light)', marginBottom: '6px' }}>📍 {pkg.location} | 👥 {pkg.quota} pax</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '0.9rem' }}>Rp {pkg.price.toLocaleString('id-ID')}</span>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button onClick={() => handleEdit(pkg)} className="btn btn-outline" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>Edit</button>
+                        <button onClick={() => handleDelete(pkg.id)} className="btn btn-danger" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>Hapus</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
-
-        <div className="card p-8">
-          <h3 className="mb-6">{editingId ? 'Edit Paket' : 'Tambah Paket Baru'}</h3>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Judul Paket</label>
-              <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="input" placeholder="e.g. Ritual Kejawen Yogyakarta" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Lokasi</label>
-                <input type="text" name="location" value={formData.location} onChange={handleInputChange} required className="input" placeholder="Kota/Daerah" />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Durasi</label>
-                <input type="text" name="duration" value={formData.duration} onChange={handleInputChange} required className="input" placeholder="e.g. 3H 2M" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Harga (Rp)</label>
-                <input type="number" name="price" value={formData.price} onChange={handleInputChange} required className="input" />
-              </div>
-              <div>
-                <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Kuota</label>
-                <input type="number" name="quota" value={formData.quota} onChange={handleInputChange} required className="input" />
-              </div>
-            </div>
-            <div>
-              <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Gambar Paket</label>
-              <input type="file" onChange={handleFileUpload} accept="image/*" style={{ fontSize: '0.8rem' }} />
-              {uploading && <p style={{ fontSize: '0.7rem', color: 'var(--primary)' }}>Mengunggah...</p>}
-            </div>
-            <button type="submit" className="btn btn-primary w-full" style={{ padding: '0.8rem' }}>
-              {editingId ? 'Simpan Perubahan' : 'Publish Paket 🚀'}
-            </button>
-            {editingId && (
-              <button type="button" onClick={() => setEditingId(null)} className="btn btn-outline w-full" style={{ padding: '0.8rem' }}>Batal</button>
-            )}
-          </form>
-        </div>
-      </div>
-
-      <h3 className="mb-6">Katalog Paket Saya</h3>
-      <div className="grid grid-cols-2 gap-6">
-        {packages.map(pkg => (
-          <div key={pkg.id} className="card p-6 flex gap-6 items-center">
-            <img src={pkg.image_url || 'https://via.placeholder.com/100'} alt={pkg.title} style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '16px' }} />
-            <div style={{ flex: 1 }}>
-              <div className="flex justify-between items-start">
-                <div>
-                  <h4 style={{ fontFamily: 'var(--font-sans)', fontWeight: 800 }}>{pkg.title}</h4>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>📍 {pkg.location} | 👥 {pkg.quota} PAX</p>
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(pkg)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.7rem' }}>Edit</button>
-                  <button onClick={() => handleDelete(pkg.id)} className="btn btn-outline" style={{ padding: '4px 8px', fontSize: '0.7rem', color: 'var(--danger)', borderColor: 'var(--danger)' }}>Hapus</button>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                <span style={{ fontWeight: 800, color: 'var(--secondary)' }}>Rp {pkg.price.toLocaleString('id-ID')}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{pkg.duration}</span>
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </DashboardLayout>
   )
