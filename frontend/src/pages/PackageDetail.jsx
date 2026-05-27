@@ -54,6 +54,17 @@ const PackageDetail = () => {
       return
     }
 
+    // Manual validation
+    if (bookingData.participants < 1) {
+      alert('Jumlah peserta minimal adalah 1')
+      return
+    }
+
+    if (pkg.quota > 0 && bookingData.participants > pkg.quota) {
+      alert(`Jumlah peserta tidak boleh melebihi kuota (${pkg.quota})`)
+      return
+    }
+
     setSubmitting(true)
     try {
       const token = localStorage.getItem('token')
@@ -178,12 +189,13 @@ const PackageDetail = () => {
                     <input 
                       type="number" 
                       min="1" 
-                      max={pkg.quota}
+                      max={pkg.quota > 0 ? pkg.quota : undefined}
                       required 
                       value={bookingData.participants}
-                      onChange={(e) => setBookingData({ ...bookingData, participants: parseInt(e.target.value) })}
+                      onChange={(e) => setBookingData({ ...bookingData, participants: parseInt(e.target.value) || 1 })}
                       style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
+                    {pkg.quota > 0 && <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>Maksimal {pkg.quota} peserta</p>}
                   </div>
                   <div style={{ marginBottom: '1.5rem' }}>
                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Catatan Tambahan</label>

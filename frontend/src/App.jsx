@@ -8,6 +8,7 @@ import SuperadminDashboard from './pages/SuperadminDashboard'
 import { TouristDashboard, ProviderDashboard } from './pages/RoleDashboards'
 import PackageDetail from './pages/PackageDetail'
 import JourneyStudio from './pages/JourneyStudio'
+import TripPlannerDetail from './pages/TripPlannerDetail'
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
         <Route path="/provider" element={<ProviderDashboard />} />
         <Route path="/packages/:id" element={<PackageDetail />} />
         <Route path="/journey-studio" element={<JourneyStudio />} />
+        <Route path="/trip-planner/:bookingId" element={<TripPlannerDetail />} />
       </Routes>
     </Router>
   )

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 const JourneyStudio = () => {
-  const [activeTab, setActiveTab] = useState('itinerary')
+  const [activeTab, setActiveTab] = useState('memory')
   const [loading, setLoading] = useState(false)
   const [stories, setStories] = useState([])
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -39,8 +39,24 @@ const JourneyStudio = () => {
 
       <section className="section" style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
         <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-          <h1 style={{ fontSize: '2.5rem', color: 'var(--deep-green)', marginBottom: '0.5rem' }}>Journey Studio Lite</h1>
-          <p style={{ color: '#666' }}>Rancang itinerary, simpan kenangan, dan bagikan cerita budaya Anda.</p>
+          <h1 style={{ fontSize: '2.5rem', color: 'var(--deep-green)', marginBottom: '0.5rem' }}>Journey Studio</h1>
+          <p style={{ color: '#666', marginBottom: '1.5rem' }}>Abadikan momen berkesan dan bagikan cerita perjalanan budaya Anda.</p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+            <button 
+              onClick={() => navigate(user.id ? '/tourist' : '/login')}
+              style={{ 
+                padding: '0.6rem 1.2rem', 
+                borderRadius: '50px', 
+                border: '2px solid var(--burnt-orange)', 
+                background: 'white', 
+                color: 'var(--burnt-orange)', 
+                fontWeight: 'bold', 
+                cursor: 'pointer' 
+              }}
+            >
+              Lihat Booking Saya untuk Itinerary & Persiapan
+            </button>
+          </div>
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
@@ -60,13 +76,28 @@ const JourneyStudio = () => {
                 transition: 'all 0.3s'
               }}
             >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)} {tab === 'itinerary' ? 'Planner' : tab === 'memory' ? 'Lane' : 'Challenge'}
+              {tab === 'itinerary' ? 'Smart Itinerary' : tab === 'memory' ? 'Memory Lane' : 'Story Challenge'}
             </button>
           ))}
         </div>
 
         <div style={{ minHeight: '500px' }}>
-          {activeTab === 'itinerary' && <ItineraryPlanner user={user} />}
+          {activeTab === 'itinerary' && (
+            <div style={{ textAlign: 'center', padding: '4rem', background: 'white', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🗺️</div>
+              <h3 style={{ marginBottom: '1rem' }}>Smart Itinerary Planner</h3>
+              <p style={{ color: '#666', maxWidth: '500px', margin: '0 auto 2rem' }}>
+                Itinerary perjalanan kini dibuat secara otomatis berdasarkan booking yang sudah Anda lakukan untuk memberikan rencana yang lebih akurat dan terpersonalisasi.
+              </p>
+              <button 
+                onClick={() => navigate(user.id ? '/tourist' : '/login')}
+                className="btn-register"
+                style={{ border: 'none', cursor: 'pointer' }}
+              >
+                Cek Persiapan di Dashboard
+              </button>
+            </div>
+          )}
           {activeTab === 'memory' && <MemoryLane user={user} />}
           {activeTab === 'story' && <StoryChallenge user={user} stories={stories} refresh={fetchStories} />}
         </div>

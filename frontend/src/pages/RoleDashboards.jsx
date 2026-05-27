@@ -158,6 +158,27 @@ export const TouristDashboard = () => {
                     <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>Tanggal: {booking.travel_date}</p>
                     <p style={{ fontSize: '0.8rem', color: '#666', margin: '0.2rem 0' }}>{booking.participants} Peserta</p>
                     <p style={{ fontWeight: 'bold', fontSize: '0.85rem', marginTop: '0.5rem' }}>Rp {(booking.price * booking.participants).toLocaleString('id-ID')}</p>
+                    
+                    <button 
+                      onClick={() => navigate(`/trip-planner/${booking.id}`)}
+                      disabled={booking.status === 'rejected'}
+                      style={{ 
+                        width: '100%', 
+                        marginTop: '1rem', 
+                        padding: '0.5rem', 
+                        borderRadius: '6px', 
+                        border: '1px solid var(--burnt-orange)', 
+                        background: 'transparent', 
+                        color: 'var(--burnt-orange)', 
+                        fontSize: '0.8rem', 
+                        fontWeight: 'bold',
+                        cursor: booking.status === 'rejected' ? 'not-allowed' : 'pointer',
+                        opacity: booking.status === 'rejected' ? 0.5 : 1
+                      }}
+                      title={booking.status === 'rejected' ? 'Persiapan trip tidak tersedia untuk booking yang ditolak.' : ''}
+                    >
+                      {booking.status === 'rejected' ? 'Persiapan Tidak Tersedia' : 'Persiapan Trip'}
+                    </button>
                   </div>
                 ))}
               </div>

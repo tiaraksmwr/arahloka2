@@ -101,6 +101,36 @@ function initializeDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 
+    // Create trip_plans table
+    db.run(`CREATE TABLE IF NOT EXISTS trip_plans (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      booking_id INTEGER NOT NULL,
+      tourist_id INTEGER NOT NULL,
+      package_id INTEGER NOT NULL,
+      plan_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (booking_id) REFERENCES bookings(id),
+      FOREIGN KEY (tourist_id) REFERENCES users(id),
+      FOREIGN KEY (package_id) REFERENCES packages(id)
+    )`);
+
+    // Create trip_checklist table
+    db.run(`CREATE TABLE IF NOT EXISTS trip_checklist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      booking_id INTEGER NOT NULL,
+      tourist_id INTEGER NOT NULL,
+      item_name TEXT NOT NULL,
+      category TEXT NOT NULL,
+      is_checked INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (booking_id) REFERENCES bookings(id),
+      FOREIGN KEY (tourist_id) REFERENCES users(id)
+    )`);
+
     // Add missing columns safely if they don't exist
     db.all("PRAGMA table_info(packages)", (err, columns) => {
       if (err) return;
@@ -490,6 +520,145 @@ app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
   const imageUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
   res.json({ image_url: imageUrl });
+});
+
+// Trip Planner Routes
+app.get('/api/trip-planner/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const query = `
+    SELECT tp.*, p.title as package_title, p.location, b.travel_date
+    FROM trip_plans tp
+    JOIN packages p ON tp.package_id = p.id
+    JOIN bookings b ON tp.booking_id = b.id
+    WHERE tp.tourist_id = ?
+    GROUP BY tp.booking_id
+  `;
+  db.all(query, [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+app.get('/api/trip-planner/:bookingId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const bookingId = req.params.bookingId;
+  
+  const query = `
+    SELECT b.*, p.title, p.location, p.duration, p.image_url, p.description
+    FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.id = ? AND b.tourist_id = ?
+  `;
+
+  db.get(query, [bookingId, req.user.id], (err, booking) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+
+    db.all("SELECT * FROM trip_plans WHERE booking_id = ?", [bookingId], (err, plans) => {
+      if (err) return res.status(500).json({ error: err.message });
+      
+      db.all("SELECT * FROM trip_checklist WHERE booking_id = ?", [bookingId], (err, checklist) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ booking, plans, checklist });
+      });
+    });
+  });
+});
+
+app.post('/api/trip-planner/:bookingId/generate', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const bookingId = req.params.bookingId;
+
+  const query = `
+    SELECT b.*, p.title, p.location, p.duration, p.description
+    FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.id = ? AND b.tourist_id = ?
+  `;
+
+  db.get(query, [bookingId, req.user.id], (err, trip) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!trip) return res.status(404).json({ message: 'Booking not found' });
+
+    const durationDays = parseInt(trip.duration) || 1;
+    
+    // Generate Itineraries
+    const dailyPlan = Array.from({ length: durationDays }, (_, i) => 
+      `Hari ${i + 1}: Eksplorasi ${trip.location} - Fokus pada destinasi ${trip.title.split(' ')[0]}. Nikmati suasana lokal dan kuliner khas.`
+    ).join('\n');
+
+    const timePlan = `08.00 - Persiapan dan sarapan
+10.00 - Kunjungan ke objek wisata budaya
+12.00 - Istirahat dan makan siang kuliner lokal
+14.00 - Aktivitas pengalaman budaya interaktif
+17.00 - Kembali ke penginapan, istirahat, dan dokumentasi`;
+
+    // Generate Checklist
+    const checklistItems = [
+      { name: 'Identitas diri (KTP/Passport)', cat: 'Dokumen' },
+      { name: 'Tiket atau bukti booking ArahLoka', cat: 'Dokumen' },
+      { name: 'Dompet dan uang tunai secukupnya', cat: 'Barang Pribadi' },
+      { name: 'Handphone, charger, dan powerbank', cat: 'Barang Pribadi' },
+      { name: 'Obat-obatan pribadi', cat: 'Barang Pribadi' },
+      { name: 'Botol minum reusable', cat: 'Perlengkapan Perjalanan' }
+    ];
+
+    if (durationDays > 1) {
+      checklistItems.push(
+        { name: 'Pakaian ganti secukupnya', cat: 'Barang Pribadi' },
+        { name: 'Perlengkapan mandi', cat: 'Barang Pribadi' },
+        { name: 'Sandal atau sepatu jalan yang nyaman', cat: 'Perlengkapan Perjalanan' }
+      );
+    }
+
+    const culturalKeywords = ['Bali', 'Yogyakarta', 'Borobudur', 'Toraja', 'Penglipuran', 'Budaya', 'Candi', 'Keraton'];
+    if (culturalKeywords.some(key => trip.title.includes(key) || trip.location.includes(key) || trip.description.includes(key))) {
+      checklistItems.push(
+        { name: 'Pakaian sopan untuk kunjungan budaya', cat: 'Budaya dan Etika Lokal' },
+        { name: 'Kain tradisional atau outer (jika diperlukan)', cat: 'Budaya dan Etika Lokal' },
+        { name: 'Kamera untuk dokumentasi', cat: 'Barang Pribadi' },
+        { name: 'Catatan etika lokal (cek di ArahLoka)', cat: 'Budaya dan Etika Lokal' }
+      );
+    }
+
+    checklistItems.push(
+      { name: 'Payung kecil atau jas hujan lipat', cat: 'Perlengkapan Perjalanan' },
+      { name: 'Topi atau kacamata hitam', cat: 'Perlengkapan Perjalanan' },
+      { name: 'Sunscreen / Tabir surya', cat: 'Barang Pribadi' }
+    );
+
+    db.serialize(() => {
+      // Clear existing for this booking
+      db.run("DELETE FROM trip_plans WHERE booking_id = ?", [bookingId]);
+      
+      // Insert Plans
+      const stmtPlan = db.prepare("INSERT INTO trip_plans (booking_id, tourist_id, package_id, plan_type, title, content) VALUES (?, ?, ?, ?, ?, ?)");
+      stmtPlan.run(bookingId, req.user.id, trip.package_id, 'daily', 'Daily Itinerary', dailyPlan);
+      stmtPlan.run(bookingId, req.user.id, trip.package_id, 'time', 'Time Plan', timePlan);
+      stmtPlan.finalize();
+
+      // Check if checklist already exists
+      db.get("SELECT id FROM trip_checklist WHERE booking_id = ? LIMIT 1", [bookingId], (err, row) => {
+        if (!row) {
+          const stmtCheck = db.prepare("INSERT INTO trip_checklist (booking_id, tourist_id, item_name, category) VALUES (?, ?, ?, ?)");
+          checklistItems.forEach(item => {
+            stmtCheck.run(bookingId, req.user.id, item.name, item.cat);
+          });
+          stmtCheck.finalize();
+        }
+        res.json({ message: 'Trip Planner generated successfully' });
+      });
+    });
+  });
+});
+
+app.patch('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  db.run(
+    "UPDATE trip_checklist SET is_checked = (NOT is_checked), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
+    [req.params.itemId, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+      res.json({ message: 'Checklist item updated' });
+    }
+  );
 });
 
 // Journey Studio Routes
