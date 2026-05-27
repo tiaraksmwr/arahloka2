@@ -711,6 +711,99 @@ app.patch('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(
   );
 });
 
+app.post('/api/trip-planner/:bookingId/checklist', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const { item_name, category } = req.body;
+  const bookingId = req.params.bookingId;
+
+  if (!item_name) {
+    return res.status(400).json({ message: 'Item name is required' });
+  }
+
+  // Validate booking belongs to user
+  db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!booking) return res.status(404).json({ message: 'Booking not found or unauthorized' });
+
+    db.run(
+      "INSERT INTO trip_checklist (booking_id, tourist_id, item_name, category) VALUES (?, ?, ?, ?)",
+      [bookingId, req.user.id, item_name, category || 'Tambahan Pribadi'],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json({ id: this.lastID, item_name, category: category || 'Tambahan Pribadi', is_checked: 0 });
+      }
+    );
+  });
+});
+
+app.put('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const { item_name, category } = req.body;
+  
+  if (!item_name) {
+    return res.status(400).json({ message: 'Item name is required' });
+  }
+
+  db.run(
+    "UPDATE trip_checklist SET item_name = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
+    [item_name, category, req.params.itemId, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+      res.json({ message: 'Checklist item updated successfully' });
+    }
+  );
+});
+
+app.delete('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  db.run(
+    "DELETE FROM trip_checklist WHERE id = ? AND tourist_id = ?",
+    [req.params.itemId, req.user.id],
+    function(err) {
+      if (err) return res.status(500).json({ error: err.message });
+      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+      res.json({ message: 'Checklist item deleted successfully' });
+    }
+  );
+});
+
+app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
+  const { plan_type, title, content } = req.body;
+  const bookingId = req.params.bookingId;
+
+  if (!['daily', 'time'].includes(plan_type)) {
+    return res.status(400).json({ message: 'Invalid plan type' });
+  }
+
+  // Validate booking belongs to user
+  db.get("SELECT package_id FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!booking) return res.status(404).json({ message: 'Booking not found or unauthorized' });
+
+    db.get("SELECT id FROM trip_plans WHERE booking_id = ? AND plan_type = ?", [bookingId, plan_type], (err, plan) => {
+      if (err) return res.status(500).json({ error: err.message });
+
+      if (plan) {
+        db.run(
+          "UPDATE trip_plans SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+          [title, content, plan.id],
+          function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Itinerary updated successfully' });
+          }
+        );
+      } else {
+        db.run(
+          "INSERT INTO trip_plans (booking_id, tourist_id, package_id, plan_type, title, content) VALUES (?, ?, ?, ?, ?, ?)",
+          [bookingId, req.user.id, booking.package_id, plan_type, title, content],
+          function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.status(201).json({ id: this.lastID, message: 'Itinerary created successfully' });
+          }
+        );
+      }
+    });
+  });
+});
+
 // Journey Studio Routes
 app.post('/api/journey-studio', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
   const { type, destination, content, rating, image_url } = req.body;

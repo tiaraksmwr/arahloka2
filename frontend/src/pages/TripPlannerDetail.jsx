@@ -9,6 +9,16 @@ const TripPlannerDetail = () => {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [activeTab, setActiveTab] = useState('daily')
+  const [isEditing, setIsEditing] = useState(false)
+  const [editContent, setEditContent] = useState('')
+  const [savingPlan, setSavingPlan] = useState(false)
+
+  // Checklist management state
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newItem, setNewItem] = useState({ item_name: '', category: 'Tambahan Pribadi' })
+  const [editingItemId, setEditingItemId] = useState(null)
+  const [editItem, setEditItem] = useState({ item_name: '', category: '' })
+  
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
@@ -44,6 +54,39 @@ const TripPlannerDetail = () => {
     }
   }
 
+  const handleStartEdit = () => {
+    const plan = data.plans.find(p => p.plan_type === activeTab)
+    if (!plan) {
+      alert('Buat itinerary terlebih dahulu sebelum mengedit.')
+      return
+    }
+    setEditContent(plan.content)
+    setIsEditing(true)
+  }
+
+  const handleSavePlan = async () => {
+    setSavingPlan(true)
+    try {
+      const token = localStorage.getItem('token')
+      const plan = data.plans.find(p => p.plan_type === activeTab)
+      await axios.put(`${import.meta.env.VITE_API_URL}/trip-planner/${bookingId}/plan`, {
+        plan_type: activeTab,
+        title: plan?.title || (activeTab === 'daily' ? 'Daily Itinerary' : 'Time Plan'),
+        content: editContent
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      
+      setIsEditing(false)
+      alert('Itinerary berhasil diperbarui.')
+      fetchTripData()
+    } catch (err) {
+      alert('Gagal memperbarui itinerary.')
+    } finally {
+      setSavingPlan(false)
+    }
+  }
+
   const toggleChecklist = async (itemId) => {
     try {
       const token = localStorage.getItem('token')
@@ -60,6 +103,60 @@ const TripPlannerDetail = () => {
       }))
     } catch (err) {
       alert('Gagal update checklist')
+    }
+  }
+
+  const handleAddChecklist = async (e) => {
+    e.preventDefault()
+    if (!newItem.item_name) return
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/trip-planner/${bookingId}/checklist`, newItem, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setData(prev => ({
+        ...prev,
+        checklist: [...prev.checklist, response.data]
+      }))
+      setNewItem({ item_name: '', category: 'Tambahan Pribadi' })
+      setShowAddForm(false)
+    } catch (err) {
+      alert('Gagal menambah barang')
+    }
+  }
+
+  const handleUpdateChecklist = async (itemId) => {
+    if (!editItem.item_name) return
+    try {
+      const token = localStorage.getItem('token')
+      await axios.put(`${import.meta.env.VITE_API_URL}/trip-planner/checklist/${itemId}`, editItem, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setData(prev => ({
+        ...prev,
+        checklist: prev.checklist.map(item => 
+          item.id === itemId ? { ...item, ...editItem } : item
+        )
+      }))
+      setEditingItemId(null)
+    } catch (err) {
+      alert('Gagal update barang')
+    }
+  }
+
+  const handleDeleteChecklist = async (itemId) => {
+    if (!window.confirm('Hapus barang ini dari checklist?')) return
+    try {
+      const token = localStorage.getItem('token')
+      await axios.delete(`${import.meta.env.VITE_API_URL}/trip-planner/checklist/${itemId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setData(prev => ({
+        ...prev,
+        checklist: prev.checklist.filter(item => item.id !== itemId)
+      }))
+    } catch (err) {
+      alert('Gagal menghapus barang')
     }
   }
 
@@ -155,37 +252,103 @@ const TripPlannerDetail = () => {
             <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.3rem' }}>Rencana Perjalanan</h3>
-                <div style={{ display: 'flex', background: '#f8f9fa', borderRadius: '8px', padding: '0.3rem' }}>
-                  <button 
-                    onClick={() => setActiveTab('daily')} 
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer',
-                      background: activeTab === 'daily' ? 'white' : 'transparent',
-                      boxShadow: activeTab === 'daily' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                      fontWeight: activeTab === 'daily' ? 'bold' : 'normal'
-                    }}
-                  >Harian</button>
-                  <button 
-                    onClick={() => setActiveTab('time')} 
-                    style={{ 
-                      padding: '0.5rem 1rem', 
-                      border: 'none', 
-                      borderRadius: '6px', 
-                      cursor: 'pointer',
-                      background: activeTab === 'time' ? 'white' : 'transparent',
-                      boxShadow: activeTab === 'time' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                      fontWeight: activeTab === 'time' ? 'bold' : 'normal'
-                    }}
-                  >Waktu</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {!isEditing && plans.length > 0 && (
+                    <button 
+                      onClick={handleStartEdit}
+                      style={{ 
+                        background: 'none', 
+                        border: '1px solid var(--burnt-orange)', 
+                        color: 'var(--burnt-orange)', 
+                        padding: '0.4rem 0.8rem', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      ✏️ Edit Itinerary
+                    </button>
+                  )}
+                  <div style={{ display: 'flex', background: '#f8f9fa', borderRadius: '8px', padding: '0.3rem' }}>
+                    <button 
+                      onClick={() => { setActiveTab('daily'); setIsEditing(false); }} 
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        border: 'none', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        background: activeTab === 'daily' ? 'white' : 'transparent',
+                        boxShadow: activeTab === 'daily' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                        fontWeight: activeTab === 'daily' ? 'bold' : 'normal'
+                      }}
+                    >Harian</button>
+                    <button 
+                      onClick={() => { setActiveTab('time'); setIsEditing(false); }} 
+                      style={{ 
+                        padding: '0.5rem 1rem', 
+                        border: 'none', 
+                        borderRadius: '6px', 
+                        cursor: 'pointer',
+                        background: activeTab === 'time' ? 'white' : 'transparent',
+                        boxShadow: activeTab === 'time' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                        fontWeight: activeTab === 'time' ? 'bold' : 'normal'
+                      }}
+                    >Waktu</button>
+                  </div>
                 </div>
               </div>
               
               {plans.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
                   <p>Belum ada rencana perjalanan. Klik "Buat Itinerary" untuk memulai.</p>
+                </div>
+              ) : isEditing ? (
+                <div>
+                  <textarea 
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    style={{ 
+                      width: '100%', 
+                      minHeight: '300px', 
+                      padding: '1rem', 
+                      borderRadius: '8px', 
+                      border: '1px solid #ddd',
+                      lineHeight: '1.6',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                    <button 
+                      onClick={handleSavePlan}
+                      disabled={savingPlan}
+                      style={{ 
+                        background: 'var(--deep-green)', 
+                        color: 'white', 
+                        border: 'none', 
+                        padding: '0.6rem 1.2rem', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {savingPlan ? 'Menyimpan...' : 'Simpan Perubahan'}
+                    </button>
+                    <button 
+                      onClick={() => setIsEditing(false)}
+                      style={{ 
+                        background: '#eee', 
+                        color: '#444', 
+                        border: 'none', 
+                        padding: '0.6rem 1.2rem', 
+                        borderRadius: '8px', 
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Batal
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div style={{ whiteSpace: 'pre-line', lineHeight: '1.8', color: '#444' }}>
@@ -195,27 +358,121 @@ const TripPlannerDetail = () => {
             </div>
 
             <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-              <h3 style={{ fontSize: '1.3rem', marginBottom: '1.5rem' }}>Checklist Persiapan</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.3rem' }}>Checklist Persiapan</h3>
+                <button 
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  style={{ 
+                    background: 'var(--deep-green)', 
+                    color: 'white', 
+                    border: 'none', 
+                    padding: '0.5rem 1rem', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {showAddForm ? 'Batal' : '+ Tambah Barang'}
+                </button>
+              </div>
+
+              {showAddForm && (
+                <form onSubmit={handleAddChecklist} style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr auto' }}>
+                  <input 
+                    type="text" 
+                    placeholder="Nama Barang" 
+                    value={newItem.item_name} 
+                    onChange={e => setNewItem({...newItem, item_name: e.target.value})}
+                    required
+                    style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }}
+                  />
+                  <select 
+                    value={newItem.category} 
+                    onChange={e => setNewItem({...newItem, category: e.target.value})}
+                    style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }}
+                  >
+                    <option>Dokumen</option>
+                    <option>Barang Pribadi</option>
+                    <option>Perlengkapan Perjalanan</option>
+                    <option>Budaya dan Etika Lokal</option>
+                    <option>Tambahan Pribadi</option>
+                  </select>
+                  <button type="submit" className="btn-register" style={{ border: 'none', cursor: 'pointer', padding: '0.6rem 1.2rem' }}>Simpan</button>
+                </form>
+              )}
+
               {checklist.length === 0 ? (
-                <p style={{ color: '#888' }}>Checklist akan muncul setelah Anda membuat itinerary.</p>
+                <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>Belum ada checklist. Buat itinerary untuk mendapatkan saran otomatis atau tambahkan secara manual.</p>
               ) : (
                 Object.keys(groupedChecklist).map(category => (
                   <div key={category} style={{ marginBottom: '2rem' }}>
                     <h4 style={{ fontSize: '1rem', color: 'var(--burnt-orange)', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>{category}</h4>
-                    <div style={{ display: 'grid', gap: '0.8rem' }}>
+                    <div style={{ display: 'grid', gap: '1rem' }}>
                       {groupedChecklist[category].map(item => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={!!item.is_checked} 
-                            onChange={() => toggleChecklist(item.id)}
-                            style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer', accentColor: 'var(--deep-green)' }}
-                          />
-                          <span style={{ 
-                            fontSize: '0.95rem', 
-                            textDecoration: item.is_checked ? 'line-through' : 'none',
-                            color: item.is_checked ? '#888' : '#333'
-                          }}>{item.item_name}</span>
+                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="checklist-item-row">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flex: 1 }}>
+                            <input 
+                              type="checkbox" 
+                              checked={!!item.is_checked} 
+                              onChange={() => toggleChecklist(item.id)}
+                              style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer', accentColor: 'var(--deep-green)' }}
+                            />
+                            {editingItemId === item.id ? (
+                              <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
+                                <input 
+                                  type="text" 
+                                  value={editItem.item_name} 
+                                  onChange={e => setEditItem({...editItem, item_name: e.target.value})}
+                                  style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--burnt-orange)', flex: 1 }}
+                                />
+                                <select 
+                                  value={editItem.category} 
+                                  onChange={e => setEditItem({...editItem, category: e.target.value})}
+                                  style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd' }}
+                                >
+                                  <option>Dokumen</option>
+                                  <option>Barang Pribadi</option>
+                                  <option>Perlengkapan Perjalanan</option>
+                                  <option>Budaya dan Etika Lokal</option>
+                                  <option>Tambahan Pribadi</option>
+                                </select>
+                              </div>
+                            ) : (
+                              <span style={{ 
+                                fontSize: '0.95rem', 
+                                textDecoration: item.is_checked ? 'line-through' : 'none',
+                                color: item.is_checked ? '#888' : '#333'
+                              }}>{item.item_name}</span>
+                            )}
+                          </div>
+                          
+                          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
+                            {editingItemId === item.id ? (
+                              <>
+                                <button onClick={() => handleUpdateChecklist(item.id)} style={{ background: 'var(--deep-green)', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Simpan</button>
+                                <button onClick={() => setEditingItemId(null)} style={{ background: '#eee', color: '#444', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Batal</button>
+                              </>
+                            ) : (
+                              <>
+                                <button 
+                                  onClick={() => {
+                                    setEditingItemId(item.id);
+                                    setEditItem({ item_name: item.item_name, category: item.category });
+                                  }}
+                                  style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}
+                                >
+                                  ✏️
+                                </button>
+                                <button 
+                                  onClick={() => handleDeleteChecklist(item.id)}
+                                  style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}
+                                >
+                                  🗑️
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
