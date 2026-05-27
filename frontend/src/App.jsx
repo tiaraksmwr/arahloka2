@@ -1,121 +1,100 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/packages`)
+      .then(res => res.json())
+      .then(data => {
+        setPackages(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Error fetching packages:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div className="app">
+      <nav className="navbar">
+        <a href="/" className="logo">ArahLoka</a>
+        <div className="nav-links">
+          <a href="#">Home</a>
+          <a href="#">Explore</a>
+          <a href="#">Community Logs</a>
+          <a href="#" className="btn-login">Login</a>
+          <a href="#" className="btn-register">Register</a>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      </nav>
 
-      <div className="ticks"></div>
+      <header className="hero">
+        <h1>ArahLoka</h1>
+        <p>Temukan, Jelajahi, dan Lestarikan Budaya Indonesia.</p>
+      </header>
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
+      <section className="section">
+        <div className="features-grid">
+          <div className="feature-card">
+            <h3>Rekomendasi Destinasi</h3>
+            <p>Temukan tempat-tempat tersembunyi yang kaya akan budaya.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Paket Wisata Budaya</h3>
+            <p>Pilihan paket perjalanan kurasi terbaik untuk Anda.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Cuaca Destinasi</h3>
+            <p>Pantau kondisi cuaca untuk rencana perjalanan yang sempurna.</p>
+          </div>
+          <div className="feature-card">
+            <h3>Journey Studio</h3>
+            <p>Abadikan dan bagikan momen perjalanan budaya Anda.</p>
+          </div>
         </div>
       </section>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      <section className="section">
+        <h2 className="section-title">Paket Budaya Unggulan</h2>
+        {loading ? (
+          <p style={{ textAlign: 'center' }}>Memuat paket wisata...</p>
+        ) : (
+          <div className="packages-grid">
+            {packages.map(pkg => (
+              <div key={pkg.id} className="package-card">
+                <img src={pkg.image_url} alt={pkg.title} className="package-image" />
+                <div className="package-content">
+                  <div className="package-location">{pkg.location}</div>
+                  <h3 className="package-title">{pkg.title}</h3>
+                  <p className="package-description" style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#666' }}>
+                    {pkg.description}
+                  </p>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span className="package-duration" style={{ fontSize: '0.8rem', color: '#888' }}>{pkg.duration}</span>
+                    <span className="package-price">{formatPrice(pkg.price)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <footer className="footer">
+        <p>&copy; 2026 ArahLoka. Pelestari Budaya Indonesia.</p>
+      </footer>
+    </div>
   )
 }
 
