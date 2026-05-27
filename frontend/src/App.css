@@ -213,3 +213,33 @@ table tr {
 table tr:hover {
   background-color: #fcfcfc;
 }
+
+/* Dashboard Styles */
+.stats-grid {
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+}
+
+.form-container input, .form-container textarea {
+  transition: border-color 0.3s;
+}
+
+.form-container input:focus, .form-container textarea:focus {
+  border-color: var(--burnt-orange);
+  outline: none;
+}
+
+.package-card {
+  transition: all 0.3s ease;
+}
+
+.package-card:hover {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+}

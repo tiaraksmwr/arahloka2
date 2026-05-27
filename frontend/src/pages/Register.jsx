@@ -20,8 +20,13 @@ function Register() {
     e.preventDefault()
     setError('')
     try {
-      await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData)
-      navigate('/pending-approval')
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/auth/register`, formData)
+      if (response.data.status === 'approved') {
+        alert('Registrasi berhasil! Silakan login.')
+        navigate('/login')
+      } else {
+        navigate('/pending-approval')
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
     }
