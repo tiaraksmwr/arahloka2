@@ -50,7 +50,7 @@ function Login() {
       <div className="auth-visual">
         <div
           className="auth-visual-bg"
-          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1596402184320-417d717867cd?auto=format&fit=crop&q=80&w=1200)' }}
+          style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&q=80&w=1200)' }}
         />
         <div className="auth-visual-overlay" />
         <div className="auth-visual-body">
@@ -64,10 +64,15 @@ function Login() {
             <p className="auth-visual-sub">
               Masuk dan lanjutkan perjalanan budaya Anda di ribuan destinasi autentik Indonesia.
             </p>
-            <div className="auth-visual-dots" style={{ marginTop: '28px' }}>
-              <div className="auth-visual-dot active"></div>
-              <div className="auth-visual-dot"></div>
-              <div className="auth-visual-dot"></div>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '28px', flexWrap: 'wrap' }}>
+              {['500+ Destinasi', '10K+ Penjelajah', '34 Provinsi'].map(t => (
+                <span key={t} style={{
+                  background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)',
+                  border: '1px solid rgba(255,255,255,0.22)',
+                  color: 'white', fontSize: '0.72rem', fontWeight: 700,
+                  padding: '5px 13px', borderRadius: '999px', letterSpacing: '0.3px',
+                }}>{t}</span>
+              ))}
             </div>
           </div>
         </div>
