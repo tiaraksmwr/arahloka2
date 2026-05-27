@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="#CC5500" strokeWidth="2.5"/>
+      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#CC5500" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#CC5500"/>
+      <circle cx="20" cy="20" r="3" fill="white"/>
+    </svg>
+    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-dark)', letterSpacing: '-0.5px', fontFamily: "var(--font-serif)" }}>ArahLoka</span>
+  </div>
+)
+
 const TripPlannerDetail = () => {
   const { bookingId } = useParams()
   const navigate = useNavigate()
@@ -160,8 +172,8 @@ const TripPlannerDetail = () => {
     }
   }
 
-  if (loading) return <div className="app" style={{ padding: '2rem' }}>Memuat...</div>
-  if (!data) return <div className="app" style={{ padding: '2rem' }}>Data tidak ditemukan.</div>
+  if (loading) return <div className="flex justify-center items-center h-screen"><p>Memuat rencana perjalanan...</p></div>
+  if (!data) return <div className="container p-12 text-center"><h3>Data tidak ditemukan.</h3></div>
 
   const { booking, plans, checklist } = data
   const dailyPlan = plans.find(p => p.plan_type === 'daily')
@@ -179,297 +191,167 @@ const TripPlannerDetail = () => {
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="logo">ArahLoka</Link>
-        <div className="nav-links">
-          <Link to="/tourist" className="btn-login">Dashboard</Link>
+      <nav className="navbar-wrapper glass scrolled">
+        <div className="navbar-container">
+          <Link to="/" className="nav-logo"><Logo /></Link>
+          <div className="nav-links">
+            <Link to="/tourist">Dashboard</Link>
+          </div>
+          <div className="nav-actions">
+            <span style={{ fontWeight: 800 }}>{user.name}</span>
+          </div>
         </div>
       </nav>
 
-      <section className="section" style={{ maxWidth: '1100px', margin: '0 auto', padding: '2rem' }}>
-        <button onClick={() => navigate('/tourist')} style={{ background: 'none', border: 'none', color: 'var(--burnt-orange)', cursor: 'pointer', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <section className="container section-padding" style={{ padding: '40px 0 100px 0' }}>
+        <button onClick={() => navigate('/tourist')} className="btn btn-outline mb-8" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
           ← Kembali ke Dashboard
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+        <div className="grid" style={{ gridTemplateColumns: '320px 1fr', gap: '3rem' }}>
           {/* Sidebar */}
-          <div className="planner-sidebar">
-            <div style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}>
-              <img src={booking.image_url} alt={booking.title} style={{ width: '100%', height: '150px', objectFit: 'cover' }} />
-              <div style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>{booking.title}</h3>
-                <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '1rem' }}>📍 {booking.location}</p>
-                <div style={{ fontSize: '0.85rem', color: '#444' }}>
-                  <p style={{ marginBottom: '0.4rem' }}>📅 Tanggal: {booking.travel_date}</p>
-                  <p style={{ marginBottom: '0.4rem' }}>⏱️ Durasi: {booking.duration}</p>
-                  <p style={{ marginBottom: '0.4rem' }}>👥 Peserta: {booking.participants}</p>
-                  <p style={{ marginBottom: '0.4rem' }}>🔔 Status: <span style={{ fontWeight: 'bold', color: booking.status === 'accepted' ? 'var(--deep-green)' : booking.status === 'rejected' ? '#dc2626' : '#92400e' }}>{booking.status?.toUpperCase()}</span></p>
+          <div className="animate-fade-in">
+            <div className="card overflow-hidden mb-8">
+              <img src={booking.image_url} alt={booking.title} style={{ width: '100%', height: '180px', objectFit: 'cover' }} />
+              <div className="p-6">
+                <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 800, textTransform: 'uppercase' }}>Trip Anda</span>
+                <h3 className="mb-4 mt-1" style={{ fontSize: '1.25rem' }}>{booking.title}</h3>
+                <div className="flex flex-col gap-2" style={{ fontSize: '0.85rem' }}>
+                  <p>📍 {booking.location}</p>
+                  <p>📅 {booking.travel_date}</p>
+                  <p>⏱️ {booking.duration}</p>
+                  <p>👥 {booking.participants} Orang</p>
                 </div>
               </div>
             </div>
 
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '16px', boxShadow: 'var(--shadow)', borderLeft: `6px solid ${progressPercent === 100 ? 'var(--deep-green)' : '#f59e0b'}` }}>
-              <h4 style={{ marginBottom: '1rem' }}>Status Persiapan</h4>
-              <div style={{ height: '10px', background: '#eee', borderRadius: '5px', overflow: 'hidden', marginBottom: '0.5rem' }}>
-                <div style={{ width: `${progressPercent}%`, height: '100%', background: progressPercent === 100 ? 'var(--deep-green)' : 'var(--burnt-orange)', transition: 'width 0.3s' }}></div>
+            <div className="card p-6 mb-8" style={{ borderLeft: `6px solid ${progressPercent === 100 ? 'var(--success)' : 'var(--warning)'}` }}>
+              <h4 className="mb-4">Persiapan Barang</h4>
+              <div style={{ height: '12px', background: '#eee', borderRadius: '6px', overflow: 'hidden', marginBottom: '0.75rem' }}>
+                <div style={{ width: `${progressPercent}%`, height: '100%', background: progressPercent === 100 ? 'var(--success)' : 'var(--primary)', transition: 'width 0.8s ease' }}></div>
               </div>
-              <p style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{checkedItems} dari {totalItems} barang siap</p>
-              <span style={{ 
-                display: 'inline-block', 
-                marginTop: '1rem', 
-                padding: '0.25rem 0.75rem', 
-                borderRadius: '50px', 
-                fontSize: '0.75rem', 
-                fontWeight: 'bold',
-                backgroundColor: progressPercent === 100 ? '#d1fae5' : '#fef3c7',
-                color: progressPercent === 100 ? '#065f46' : '#92400e'
-              }}>
-                {progressPercent === 100 ? 'SUDAH LENGKAP' : 'HARUS DILENGKAPI'}
-              </span>
+              <div className="flex justify-between items-center">
+                <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>{progressPercent}% Siap</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-gray)' }}>{checkedItems}/{totalItems} Item</span>
+              </div>
             </div>
             
-            <div style={{ marginTop: '2rem' }}>
-              <button 
-                onClick={handleGenerate}
-                disabled={generating}
-                className="btn-register"
-                style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '1rem' }}
-              >
-                {generating ? 'Memproses...' : plans.length > 0 ? 'Perbarui Itinerary' : 'Buat Itinerary & Checklist'}
-              </button>
-            </div>
-
-            <div style={{ marginTop: '2rem', padding: '1.5rem', background: '#fdfbf0', borderRadius: '12px', border: '1px dashed #ccc' }}>
-              <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--deep-green)' }}>💡 Etika Lokal</h4>
-              <p style={{ fontSize: '0.85rem', color: '#666', lineHeight: '1.5' }}>
-                Hormati aturan lokal, berpakaian sopan di tempat ibadah, dan ikuti arahan pemandu selama perjalanan budaya ini.
-              </p>
-            </div>
+            <button 
+              onClick={handleGenerate}
+              disabled={generating}
+              className="btn btn-primary w-full"
+              style={{ padding: '1rem' }}
+            >
+              {generating ? 'Menyusun Rencana...' : plans.length > 0 ? '🔄 Perbarui Itinerary' : '✨ Susun Itinerary Otomatis'}
+            </button>
           </div>
 
           {/* Main Content */}
-          <div className="planner-main">
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.3rem' }}>Rencana Perjalanan</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <div className="animate-fade-in">
+            <div className="card p-8 mb-8">
+              <div className="flex justify-between items-center mb-8">
+                <h3>Rencana Perjalanan</h3>
+                <div className="flex items-center gap-4">
                   {!isEditing && plans.length > 0 && (
-                    <button 
-                      onClick={handleStartEdit}
-                      style={{ 
-                        background: 'none', 
-                        border: '1px solid var(--burnt-orange)', 
-                        color: 'var(--burnt-orange)', 
-                        padding: '0.4rem 0.8rem', 
-                        borderRadius: '6px', 
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      ✏️ Edit Itinerary
-                    </button>
+                    <button onClick={handleStartEdit} className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>✏️ Edit</button>
                   )}
-                  <div style={{ display: 'flex', background: '#f8f9fa', borderRadius: '8px', padding: '0.3rem' }}>
+                  <div className="flex bg-gray-100 p-1 rounded-xl">
                     <button 
                       onClick={() => { setActiveTab('daily'); setIsEditing(false); }} 
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        border: 'none', 
-                        borderRadius: '6px', 
-                        cursor: 'pointer',
-                        background: activeTab === 'daily' ? 'white' : 'transparent',
-                        boxShadow: activeTab === 'daily' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                        fontWeight: activeTab === 'daily' ? 'bold' : 'normal'
-                      }}
+                      className={`btn ${activeTab === 'daily' ? 'btn-primary' : ''}`}
+                      style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', background: activeTab === 'daily' ? 'var(--primary)' : 'transparent', color: activeTab === 'daily' ? 'white' : 'var(--text-gray)', boxShadow: 'none' }}
                     >Harian</button>
                     <button 
                       onClick={() => { setActiveTab('time'); setIsEditing(false); }} 
-                      style={{ 
-                        padding: '0.5rem 1rem', 
-                        border: 'none', 
-                        borderRadius: '6px', 
-                        cursor: 'pointer',
-                        background: activeTab === 'time' ? 'white' : 'transparent',
-                        boxShadow: activeTab === 'time' ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
-                        fontWeight: activeTab === 'time' ? 'bold' : 'normal'
-                      }}
+                      className={`btn ${activeTab === 'time' ? 'btn-primary' : ''}`}
+                      style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', background: activeTab === 'time' ? 'var(--primary)' : 'transparent', color: activeTab === 'time' ? 'white' : 'var(--text-gray)', boxShadow: 'none' }}
                     >Waktu</button>
                   </div>
                 </div>
               </div>
               
               {plans.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                  <p>Belum ada rencana perjalanan. Klik "Buat Itinerary" untuk memulai.</p>
+                <div className="text-center p-12 bg-gray-50 rounded-2xl border-2 border-dashed">
+                  <p className="text-gray">Klik tombol "Susun Itinerary" untuk mendapatkan rencana perjalanan berbasis AI.</p>
                 </div>
               ) : isEditing ? (
-                <div>
+                <div className="flex flex-col gap-4">
                   <textarea 
                     value={editContent}
                     onChange={(e) => setEditContent(e.target.value)}
-                    style={{ 
-                      width: '100%', 
-                      minHeight: '300px', 
-                      padding: '1rem', 
-                      borderRadius: '8px', 
-                      border: '1px solid #ddd',
-                      lineHeight: '1.6',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
+                    className="input"
+                    style={{ minHeight: '400px', resize: 'vertical', lineHeight: '1.8' }}
                   />
-                  <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
-                    <button 
-                      onClick={handleSavePlan}
-                      disabled={savingPlan}
-                      style={{ 
-                        background: 'var(--deep-green)', 
-                        color: 'white', 
-                        border: 'none', 
-                        padding: '0.6rem 1.2rem', 
-                        borderRadius: '8px', 
-                        cursor: 'pointer',
-                        fontWeight: 'bold'
-                      }}
-                    >
-                      {savingPlan ? 'Menyimpan...' : 'Simpan Perubahan'}
-                    </button>
-                    <button 
-                      onClick={() => setIsEditing(false)}
-                      style={{ 
-                        background: '#eee', 
-                        color: '#444', 
-                        border: 'none', 
-                        padding: '0.6rem 1.2rem', 
-                        borderRadius: '8px', 
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Batal
-                    </button>
+                  <div className="flex gap-4">
+                    <button onClick={handleSavePlan} disabled={savingPlan} className="btn btn-primary" style={{ flex: 1 }}>{savingPlan ? 'Menyimpan...' : 'Simpan Plan'}</button>
+                    <button onClick={() => setIsEditing(false)} className="btn btn-outline" style={{ flex: 1 }}>Batal</button>
                   </div>
                 </div>
               ) : (
-                <div style={{ whiteSpace: 'pre-line', lineHeight: '1.8', color: '#444' }}>
+                <div style={{ whiteSpace: 'pre-line', lineHeight: '2', color: 'var(--text-dark)', fontSize: '1.1rem' }}>
                   {activeTab === 'daily' ? dailyPlan?.content : timePlan?.content}
                 </div>
               )}
             </div>
 
-            <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.3rem' }}>Checklist Persiapan</h3>
-                <button 
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  style={{ 
-                    background: 'var(--deep-green)', 
-                    color: 'white', 
-                    border: 'none', 
-                    padding: '0.5rem 1rem', 
-                    borderRadius: '8px', 
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {showAddForm ? 'Batal' : '+ Tambah Barang'}
+            <div className="card p-8">
+              <div className="flex justify-between items-center mb-8">
+                <h3>Checklist Barang</h3>
+                <button onClick={() => setShowAddForm(!showAddForm)} className="btn btn-outline" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}>
+                  {showAddForm ? 'Batal' : '+ Item Baru'}
                 </button>
               </div>
 
               {showAddForm && (
-                <form onSubmit={handleAddChecklist} style={{ background: '#f8f9fa', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem', display: 'grid', gap: '1rem', gridTemplateColumns: '1fr 1fr auto' }}>
-                  <input 
-                    type="text" 
-                    placeholder="Nama Barang" 
-                    value={newItem.item_name} 
-                    onChange={e => setNewItem({...newItem, item_name: e.target.value})}
-                    required
-                    style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }}
-                  />
-                  <select 
-                    value={newItem.category} 
-                    onChange={e => setNewItem({...newItem, category: e.target.value})}
-                    style={{ padding: '0.6rem', borderRadius: '6px', border: '1px solid #ddd' }}
-                  >
+                <form onSubmit={handleAddChecklist} className="grid grid-cols-3 gap-4 mb-8 p-6 bg-gray-50 rounded-2xl animate-fade-in">
+                  <input type="text" placeholder="Nama Barang" value={newItem.item_name} onChange={e => setNewItem({...newItem, item_name: e.target.value})} required className="input" />
+                  <select value={newItem.category} onChange={e => setNewItem({...newItem, category: e.target.value})} className="input">
                     <option>Dokumen</option>
                     <option>Barang Pribadi</option>
                     <option>Perlengkapan Perjalanan</option>
                     <option>Budaya dan Etika Lokal</option>
                     <option>Tambahan Pribadi</option>
                   </select>
-                  <button type="submit" className="btn-register" style={{ border: 'none', cursor: 'pointer', padding: '0.6rem 1.2rem' }}>Simpan</button>
+                  <button type="submit" className="btn btn-primary">Tambah</button>
                 </form>
               )}
 
               {checklist.length === 0 ? (
-                <p style={{ color: '#888', textAlign: 'center', padding: '2rem' }}>Belum ada checklist. Buat itinerary untuk mendapatkan saran otomatis atau tambahkan secara manual.</p>
+                <p className="text-gray text-center p-8">Checklist belum tersedia.</p>
               ) : (
                 Object.keys(groupedChecklist).map(category => (
-                  <div key={category} style={{ marginBottom: '2rem' }}>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--burnt-orange)', marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>{category}</h4>
-                    <div style={{ display: 'grid', gap: '1rem' }}>
+                  <div key={category} className="mb-8 last:mb-0">
+                    <h4 className="mb-4 pb-2" style={{ borderBottom: '2px solid var(--primary-light)', color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1px' }}>{category}</h4>
+                    <div className="grid gap-3">
                       {groupedChecklist[category].map(item => (
-                        <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.5rem', borderRadius: '8px', transition: 'background 0.2s' }} className="checklist-item-row">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', flex: 1 }}>
+                        <div key={item.id} className="flex items-center justify-between p-3 rounded-xl hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center gap-4 flex-1">
                             <input 
                               type="checkbox" 
                               checked={!!item.is_checked} 
                               onChange={() => toggleChecklist(item.id)}
-                              style={{ width: '1.2rem', height: '1.2rem', cursor: 'pointer', accentColor: 'var(--deep-green)' }}
+                              style={{ width: '1.25rem', height: '1.25rem', cursor: 'pointer', accentColor: 'var(--primary)' }}
                             />
                             {editingItemId === item.id ? (
-                              <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
-                                <input 
-                                  type="text" 
-                                  value={editItem.item_name} 
-                                  onChange={e => setEditItem({...editItem, item_name: e.target.value})}
-                                  style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid var(--burnt-orange)', flex: 1 }}
-                                />
-                                <select 
-                                  value={editItem.category} 
-                                  onChange={e => setEditItem({...editItem, category: e.target.value})}
-                                  style={{ padding: '0.4rem', borderRadius: '4px', border: '1px solid #ddd' }}
-                                >
-                                  <option>Dokumen</option>
-                                  <option>Barang Pribadi</option>
-                                  <option>Perlengkapan Perjalanan</option>
-                                  <option>Budaya dan Etika Lokal</option>
-                                  <option>Tambahan Pribadi</option>
-                                </select>
+                              <div className="flex gap-2 flex-1">
+                                <input type="text" value={editItem.item_name} onChange={e => setEditItem({...editItem, item_name: e.target.value})} className="input" style={{ padding: '0.25rem 0.5rem' }} />
+                                <button onClick={() => handleUpdateChecklist(item.id)} className="btn btn-primary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.7rem' }}>Ok</button>
                               </div>
                             ) : (
                               <span style={{ 
-                                fontSize: '0.95rem', 
+                                fontSize: '1rem', 
                                 textDecoration: item.is_checked ? 'line-through' : 'none',
-                                color: item.is_checked ? '#888' : '#333'
+                                color: item.is_checked ? 'var(--text-light)' : 'var(--text-dark)',
+                                fontWeight: item.is_checked ? 400 : 500
                               }}>{item.item_name}</span>
                             )}
                           </div>
                           
-                          <div style={{ display: 'flex', gap: '0.5rem', marginLeft: '1rem' }}>
-                            {editingItemId === item.id ? (
+                          <div className="flex gap-4 ml-4 opacity-0 hover:opacity-100 transition-opacity" style={{ visibility: editingItemId === item.id ? 'visible' : 'inherit', opacity: editingItemId === item.id ? 1 : undefined }}>
+                            {editingItemId !== item.id && (
                               <>
-                                <button onClick={() => handleUpdateChecklist(item.id)} style={{ background: 'var(--deep-green)', color: 'white', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Simpan</button>
-                                <button onClick={() => setEditingItemId(null)} style={{ background: '#eee', color: '#444', border: 'none', padding: '0.3rem 0.6rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}>Batal</button>
-                              </>
-                            ) : (
-                              <>
-                                <button 
-                                  onClick={() => {
-                                    setEditingItemId(item.id);
-                                    setEditItem({ item_name: item.item_name, category: item.category });
-                                  }}
-                                  style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}
-                                >
-                                  ✏️
-                                </button>
-                                <button 
-                                  onClick={() => handleDeleteChecklist(item.id)}
-                                  style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem' }}
-                                >
-                                  🗑️
-                                </button>
+                                <button onClick={() => { setEditingItemId(item.id); setEditItem({ item_name: item.item_name, category: item.category }); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>✏️</button>
+                                <button onClick={() => handleDeleteChecklist(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>🗑️</button>
                               </>
                             )}
                           </div>

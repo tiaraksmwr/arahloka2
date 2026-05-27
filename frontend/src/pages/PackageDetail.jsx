@@ -2,6 +2,18 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import axios from 'axios'
 
+const Logo = () => (
+  <div className="flex items-center gap-2">
+    <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="20" r="18" stroke="#CC5500" strokeWidth="2.5"/>
+      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#CC5500" strokeWidth="2" strokeLinecap="round"/>
+      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#CC5500"/>
+      <circle cx="20" cy="20" r="3" fill="white"/>
+    </svg>
+    <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-dark)', letterSpacing: '-0.5px', fontFamily: "var(--font-serif)" }}>ArahLoka</span>
+  </div>
+)
+
 const PackageDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -54,7 +66,6 @@ const PackageDetail = () => {
       return
     }
 
-    // Manual validation
     if (bookingData.participants < 1) {
       alert('Jumlah peserta minimal adalah 1')
       return
@@ -74,7 +85,7 @@ const PackageDetail = () => {
       }, {
         headers: { Authorization: `Bearer ${token}` }
       })
-      alert(`Booking berhasil dikirim ke ${pkg.provider_name || 'penyedia jasa'} dan sedang menunggu konfirmasi. Anda dapat memantau statusnya di halaman Dashboard.`)
+      alert(`Booking berhasil dikirim! Pantau statusnya di Dashboard.`)
       navigate('/tourist')
     } catch (err) {
       alert(err.response?.data?.message || 'Gagal melakukan booking')
@@ -83,163 +94,160 @@ const PackageDetail = () => {
     }
   }
 
-  if (loading) return <div className="app" style={{ padding: '2rem' }}>Memuat...</div>
-  if (!pkg) return <div className="app" style={{ padding: '2rem' }}>Paket tidak ditemukan. <Link to="/">Kembali</Link></div>
+  if (loading) return <div className="flex justify-center items-center h-screen"><p>Memuat detail paket...</p></div>
+  if (!pkg) return <div className="container p-12 text-center"><h3>Paket tidak ditemukan.</h3><Link to="/" className="text-primary">Kembali ke Beranda</Link></div>
 
   return (
     <div className="app">
-      <nav className="navbar">
-        <Link to="/" className="logo">ArahLoka</Link>
-        <div className="nav-links">
-          {user.id ? (
-            <Link to={user.role === 'tourist' ? '/tourist' : user.role === 'travel_provider' ? '/provider' : '/admin'} className="btn-login">Dashboard</Link>
-          ) : (
-            <Link to="/login" className="btn-login">Login</Link>
-          )}
+      <nav className="navbar-wrapper glass scrolled">
+        <div className="navbar-container">
+          <Link to="/" className="nav-logo"><Logo /></Link>
+          <div className="nav-links">
+            <Link to="/">Home</Link>
+            <Link to="/tourist">Dashboard</Link>
+          </div>
+          <div className="nav-actions">
+            {user.id ? <span className="font-bold">{user.name}</span> : <Link to="/login" className="btn btn-primary">Login</Link>}
+          </div>
         </div>
       </nav>
 
-      <div className="section" style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--burnt-orange)', cursor: 'pointer', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="container section-padding" style={{ padding: '40px 0 100px 0' }}>
+        <button onClick={() => navigate(-1)} className="btn btn-outline mb-8" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
           ← Kembali
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '2rem' }}>
-          <div className="package-info">
-            <img 
-              src={pkg.image_url || 'https://via.placeholder.com/800x400'} 
-              alt={pkg.title} 
-              style={{ width: '100%', height: '400px', objectFit: 'cover', borderRadius: '16px', boxShadow: 'var(--shadow)', marginBottom: '2rem' }}
-            />
+        <div className="grid" style={{ gridTemplateColumns: '1.6fr 1fr', gap: '3rem' }}>
+          <div className="animate-fade-in">
+            <div style={{ position: 'relative', height: '500px', borderRadius: '32px', overflow: 'hidden', boxShadow: 'var(--shadow-premium)', marginBottom: '3rem' }}>
+              <img 
+                src={pkg.image_url || 'https://via.placeholder.com/800x400'} 
+                alt={pkg.title} 
+                className="w-full h-full"
+                style={{ objectFit: 'cover' }}
+              />
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', color: 'white' }}>
+                <span style={{ background: 'var(--primary)', color: 'white', padding: '4px 12px', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800 }}>📍 {pkg.location}</span>
+                <h1 style={{ color: 'white', fontSize: '3.5rem', marginTop: '1rem' }}>{pkg.title}</h1>
+              </div>
+            </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <span style={{ color: 'var(--burnt-orange)', fontWeight: 'bold', fontSize: '1.1rem' }}>{pkg.location}</span>
-                {pkg.provider_name && <p style={{ fontSize: '0.9rem', color: '#888', fontStyle: 'italic', marginTop: '0.2rem' }}>Disediakan oleh {pkg.provider_name}</p>}
-                <h1 style={{ margin: '0.5rem 0', fontSize: '2.5rem' }}>{pkg.title}</h1>
+            <div className="flex gap-12 mb-12">
+              <div className="flex flex-col gap-1">
+                <span className="text-gray" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Disediakan Oleh</span>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{pkg.provider_name || 'Penyedia Lokal'}</span>
               </div>
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>Mulai dari</p>
-                <h2 style={{ color: 'var(--deep-green)', fontSize: '1.8rem' }}>Rp {pkg.price.toLocaleString('id-ID')}</h2>
+              <div className="flex flex-col gap-1">
+                <span className="text-gray" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Durasi Trip</span>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{pkg.duration}</span>
               </div>
-            </div>
-
-            <div style={{ display: 'flex', gap: '2rem', margin: '2rem 0', padding: '1.5rem', background: '#f8f9fa', borderRadius: '12px' }}>
-              <div>
-                <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.2rem' }}>DURASI</p>
-                <p style={{ fontWeight: 'bold' }}>{pkg.duration}</p>
-              </div>
-              <div>
-                <p style={{ fontSize: '0.8rem', color: '#888', marginBottom: '0.2rem' }}>KUOTA</p>
-                <p style={{ fontWeight: 'bold' }}>{pkg.quota} Peserta</p>
+              <div className="flex flex-col gap-1">
+                <span className="text-gray" style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Kuota Tersisa</span>
+                <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>{pkg.quota} Peserta</span>
               </div>
             </div>
 
-            <div className="weather-card" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: 'var(--shadow)', marginBottom: '2rem', borderLeft: '4px solid var(--deep-green)' }}>
-              <h4 style={{ marginBottom: '1rem', color: 'var(--deep-green)' }}>Cuaca Destinasi</h4>
+            <div className="card p-8 mb-12" style={{ borderLeft: '6px solid var(--secondary)' }}>
+              <h3 className="mb-6 flex items-center gap-2">🌤️ Kondisi Cuaca Destinasi</h3>
               {weatherLoading ? (
-                <p style={{ fontSize: '0.9rem' }}>Memuat data cuaca...</p>
+                <p>Memantau cuaca...</p>
               ) : weather ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+                <div className="flex gap-12 items-center">
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: '#888' }}>TEMPERATUR</p>
-                    <p style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--burnt-orange)' }}>{weather.temperature}{weather.unit}</p>
+                    <p className="text-gray" style={{ fontSize: '0.7rem', fontWeight: 700 }}>SUHU</p>
+                    <p style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--primary)' }}>{weather.temperature}{weather.unit}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: '#888' }}>KONDISI</p>
-                    <p style={{ fontWeight: 'bold' }}>{weather.condition}</p>
+                    <p className="text-gray" style={{ fontSize: '0.7rem', fontWeight: 700 }}>KONDISI</p>
+                    <p style={{ fontWeight: 800, fontSize: '1.25rem' }}>{weather.condition}</p>
                   </div>
                   <div>
-                    <p style={{ fontSize: '0.8rem', color: '#888' }}>KECEPATAN ANGIN</p>
-                    <p style={{ fontWeight: 'bold' }}>{weather.windspeed} km/h</p>
+                    <p className="text-gray" style={{ fontSize: '0.7rem', fontWeight: 700 }}>ANGIN</p>
+                    <p style={{ fontWeight: 800, fontSize: '1.25rem' }}>{weather.windspeed} km/h</p>
                   </div>
                 </div>
               ) : (
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>
-                  {pkg.latitude && pkg.longitude 
-                    ? 'Gagal memuat data cuaca. Silakan coba lagi nanti.' 
-                    : 'Data cuaca belum tersedia untuk destinasi ini.'}
-                </p>
+                <p className="text-gray">Data cuaca tidak tersedia.</p>
               )}
-              <p style={{ fontSize: '0.7rem', color: '#aaa', marginTop: '1rem' }}>Data cuaca dari Open-Meteo</p>
             </div>
 
-            <div style={{ lineHeight: '1.8', color: '#444' }}>
-              <h3 style={{ marginBottom: '1rem' }}>Tentang Paket Ini</h3>
-              <p>{pkg.description}</p>
+            <div className="card p-8">
+              <h3 className="mb-4">Tentang Perjalanan Ini</h3>
+              <p style={{ lineHeight: '1.8', color: 'var(--text-dark)', fontSize: '1.1rem', whiteSpace: 'pre-line' }}>{pkg.description}</p>
             </div>
           </div>
 
-          <div className="booking-form-container">
-            {user.role === 'tourist' ? (
-              <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)', position: 'sticky', top: '100px' }}>
-                <h3 style={{ marginBottom: '1.5rem' }}>Booking Paket</h3>
-                <form onSubmit={handleBookingSubmit}>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Tanggal Perjalanan</label>
+          <aside style={{ position: 'sticky', top: '100px', height: 'fit-content' }}>
+            <div className="card p-8 animate-fade-in">
+              <div className="text-center mb-8">
+                <p className="text-gray" style={{ fontSize: '0.85rem', fontWeight: 600 }}>Harga Per Orang</p>
+                <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--secondary)' }}>Rp {pkg.price.toLocaleString('id-ID')}</h2>
+              </div>
+
+              {user.role === 'tourist' ? (
+                <form onSubmit={handleBookingSubmit} className="grid gap-6">
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Pilih Tanggal</label>
                     <input 
                       type="date" 
                       required 
+                      className="input"
                       value={bookingData.travel_date}
                       onChange={(e) => setBookingData({ ...bookingData, travel_date: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
                   </div>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Jumlah Peserta</label>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Jumlah Peserta</label>
                     <input 
                       type="number" 
                       min="1" 
                       max={pkg.quota > 0 ? pkg.quota : undefined}
                       required 
+                      className="input"
                       value={bookingData.participants}
                       onChange={(e) => setBookingData({ ...bookingData, participants: parseInt(e.target.value) || 1 })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd' }}
                     />
-                    {pkg.quota > 0 && <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>Maksimal {pkg.quota} peserta</p>}
                   </div>
-                  <div style={{ marginBottom: '1.5rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem' }}>Catatan Tambahan</label>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem', fontWeight: 700 }}>Catatan</label>
                     <textarea 
                       rows="3"
-                      placeholder="e.g. Alergi makanan, permintaan khusus..."
+                      placeholder="Permintaan khusus..."
+                      className="input"
+                      style={{ resize: 'none' }}
                       value={bookingData.notes}
                       onChange={(e) => setBookingData({ ...bookingData, notes: e.target.value })}
-                      style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #ddd', resize: 'none' }}
                     ></textarea>
                   </div>
                   
-                  <div style={{ borderTop: '1px solid #eee', paddingTop: '1rem', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span>Total Biaya</span>
-                      <span style={{ fontWeight: 'bold' }}>Rp {(pkg.price * bookingData.participants).toLocaleString('id-ID')}</span>
+                  <div style={{ borderTop: '2px dashed var(--border)', paddingTop: '1.5rem', marginBottom: '0.5rem' }}>
+                    <div className="flex justify-between items-center">
+                      <span style={{ fontWeight: 700 }}>Total Estimasi</span>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)' }}>Rp {(pkg.price * bookingData.participants).toLocaleString('id-ID')}</span>
                     </div>
                   </div>
 
                   <button 
                     type="submit" 
                     disabled={submitting}
-                    className="btn-register" 
-                    style={{ width: '100%', border: 'none', cursor: 'pointer' }}
+                    className="btn btn-primary w-full"
+                    style={{ padding: '1.25rem' }}
                   >
-                    {submitting ? 'Mengirim...' : 'Kirim Booking'}
+                    {submitting ? 'Mengirim...' : 'Pesan Sekarang 🚀'}
                   </button>
                 </form>
-              </div>
-            ) : user.role === 'travel_provider' || user.role === 'superadmin' ? (
-              <div style={{ background: '#f8f9fa', padding: '2rem', borderRadius: '16px', textAlign: 'center' }}>
-                <p>Anda masuk sebagai <strong>{user.role}</strong>.</p>
-                <p style={{ fontSize: '0.9rem', color: '#666' }}>Hanya turis yang dapat melakukan booking.</p>
-              </div>
-            ) : (
-              <div style={{ background: 'white', padding: '2rem', borderRadius: '16px', boxShadow: 'var(--shadow)', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '1rem' }}>Ingin Ikut Perjalanan Ini?</h3>
-                <p style={{ color: '#666', marginBottom: '1.5rem' }}>Silakan login sebagai turis untuk mulai memesan paket budaya kami.</p>
-                <Link to="/login" className="btn-register" style={{ display: 'block', textDecoration: 'none' }}>Login Sekarang</Link>
-                <p style={{ marginTop: '1rem', fontSize: '0.9rem' }}>Belum punya akun? <Link to="/register" style={{ color: 'var(--burnt-orange)' }}>Daftar</Link></p>
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="text-center p-6 bg-gray-50 rounded-2xl border-2 border-dashed">
+                  <p className="mb-4">Masuk sebagai Turis untuk memesan paket ini.</p>
+                  <Link to="/login" className="btn btn-primary w-full">Login</Link>
+                </div>
+              )}
+            </div>
+            
+            <div className="mt-8 text-center">
+              <p className="text-gray" style={{ fontSize: '0.85rem' }}>Butuh bantuan? <a href="#" style={{ color: 'var(--primary)', fontWeight: 700 }}>Hubungi CS ArahLoka</a></p>
+            </div>
+          </aside>
         </div>
       </div>
     </div>
