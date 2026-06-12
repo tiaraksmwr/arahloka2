@@ -4,7 +4,10 @@ import axios from 'axios'
 import { DashboardLayout } from './RoleDashboards'
 
 const FALLBACK_IMG = 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70'
-const statusLabel = { pending: 'Menunggu', accepted: 'Diterima', rejected: 'Ditolak' }
+const statusLabel = { pending: 'Menunggu', accepted: 'Diterima', rejected: 'Ditolak', completed: 'Selesai' }
+const countByTab = (bookings, id) => id === 'completed'
+  ? bookings.filter(b => b.completed_at).length
+  : bookings.filter(b => b.status === id).length
 
 const BookingSaya = () => {
   const [bookings, setBookings] = useState([])
@@ -35,11 +38,15 @@ const BookingSaya = () => {
     }
   }
 
-  const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter)
+  const filtered =
+    filter === 'all' ? bookings
+    : filter === 'completed' ? bookings.filter(b => b.completed_at)
+    : bookings.filter(b => b.status === filter)
   const tabs = [
     { id: 'all', label: 'Semua' },
     { id: 'pending', label: 'Menunggu' },
     { id: 'accepted', label: 'Diterima' },
+    { id: 'completed', label: 'Selesai' },
     { id: 'rejected', label: 'Ditolak' },
   ]
 
@@ -58,7 +65,7 @@ const BookingSaya = () => {
             style={{ padding: '7px 16px', fontSize: '0.82rem' }}
           >
             {tab.label}
-            {tab.id !== 'all' && ` (${bookings.filter(b => b.status === tab.id).length})`}
+            {tab.id !== 'all' && ` (${countByTab(bookings, tab.id)})`}
           </button>
         ))}
       </div>
@@ -82,7 +89,7 @@ const BookingSaya = () => {
               <div style={{ flex: 1, minWidth: '200px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '4px' }}>
                   <span style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-dark)' }}>{booking.title}</span>
-                  <span className={`badge badge-${booking.status}`}>{statusLabel[booking.status]}</span>
+                  <span className={`badge ${booking.completed_at ? 'badge-completed' : `badge-${booking.status}`}`}>{booking.completed_at ? 'Selesai' : statusLabel[booking.status]}</span>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                   <span>📍 {booking.location}</span>

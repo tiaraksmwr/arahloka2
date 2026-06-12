@@ -391,6 +391,10 @@ textarea.input { resize: vertical; min-height: 80px; }
   background: var(--danger-light);
   color: #991b1b;
 }
+.badge-completed {
+  background: var(--secondary);
+  color: white;
+}
 .badge-primary {
   background: var(--primary-light);
   color: var(--primary);

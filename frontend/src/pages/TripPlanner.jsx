@@ -67,7 +67,7 @@ const TripPlanner = () => {
               <div className="pkg-body">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <span className="pkg-title" style={{ margin: 0 }}>{trip.title}</span>
-                  <span className={`badge badge-${trip.status}`}>{statusLabel[trip.status]}</span>
+                  <span className={`badge ${trip.completed_at ? 'badge-completed' : `badge-${trip.status}`}`}>{trip.completed_at ? 'Selesai' : statusLabel[trip.status]}</span>
                 </div>
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-gray)', marginBottom: '14px' }}>
                   📅 {trip.travel_date} · 👥 {trip.participants} orang

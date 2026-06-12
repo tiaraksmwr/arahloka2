@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 /* ─── Warm Nusantara palette ─────────────────────── */
 const C = {
@@ -274,7 +274,7 @@ export default function Landing() {
               </div>
 
               {/* RIGHT: Showcase card — single tall featured destination */}
-              <div style={{ position: 'relative' }}>
+              <div style={{ position: 'relative', transform: 'translateY(-72px)' }}>
                 <div style={{
                   borderRadius: '28px', overflow: 'hidden',
                   height: '520px', position: 'relative',
@@ -358,11 +358,10 @@ export default function Landing() {
                   Jelajahi <em style={{ fontStyle: 'italic', color: C.terra }}>Nusantara</em>
                 </Heading>
               </div>
-              <a href="#" style={{ color: C.terra, fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none' }}>Lihat Semua →</a>
             </div>
 
             {/* Filter tabs */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '28px', flexWrap: 'wrap', alignItems: 'center' }}>
               {filters.map(f => (
                 <button key={f} onClick={() => setActiveFilter(f)} style={{
                   padding: '6px 18px', borderRadius: '999px', fontSize: '0.82rem', fontWeight: 700,
@@ -372,6 +371,7 @@ export default function Landing() {
                   boxShadow: activeFilter === f ? '0 4px 14px rgba(196,83,26,0.3)' : `0 0 0 1.5px ${C.border}`,
                 }}>{f}</button>
               ))}
+              <Link to="/login" style={{ marginLeft: 'auto', color: C.terra, fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none', whiteSpace: 'nowrap' }}>Lihat Semua →</Link>
             </div>
 
             {/* Bento grid */}
@@ -440,7 +440,7 @@ export default function Landing() {
                   Festival <em style={{ fontStyle: 'italic', color: C.terra }}>Mendatang</em>
                 </Heading>
               </div>
-              <a href="#" style={{ color: C.terra, fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none' }}>Semua Acara →</a>
+              <Link to="/login" style={{ color: C.terra, fontWeight: 700, fontSize: '0.88rem', textDecoration: 'none' }}>Semua Acara →</Link>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
@@ -701,8 +701,10 @@ function HeroPhoto({ src, label, radius }) {
 
 function DestCard({ d, tall = false }) {
   const [h, setH] = useState(false)
+  const navigate = useNavigate()
   return (
     <div style={{ gridRow: tall ? 'span 2' : undefined, borderRadius: '20px', overflow: 'hidden', position: 'relative', cursor: 'pointer' }}
+      onClick={() => navigate('/login')}
       onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}>
       <img src={d.img} alt={d.name} style={{
         width: '100%', height: '100%', objectFit: 'cover', display: 'block',

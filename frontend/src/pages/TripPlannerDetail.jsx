@@ -175,6 +175,7 @@ const TripPlannerDetail = () => {
   )
 
   const { booking, plans, checklist } = data
+  const isCompleted = !!booking.completed_at
   const dailyPlan = plans.find(p => p.plan_type === 'daily')
   const timePlan = plans.find(p => p.plan_type === 'time')
 
@@ -202,10 +203,10 @@ const TripPlannerDetail = () => {
         justifyContent: 'space-between'
       }}>
         <Link to="/"><ArahLokaLogo /></Link>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <Link to="/tourist" style={{ color: 'var(--text-gray)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Dashboard</Link>
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+          <Link to="/tourist" className="btn btn-ghost" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Dashboard</Link>
+          <span style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
         </div>
-        <span style={{ fontWeight: 800, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
       </nav>
 
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 32px 80px' }}>
@@ -216,6 +217,18 @@ const TripPlannerDetail = () => {
         >
           ← Kembali ke Dashboard
         </button>
+
+        {isCompleted && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            background: 'var(--secondary-light)', color: 'var(--secondary-deep)',
+            border: '1px solid var(--secondary)', borderRadius: '14px',
+            padding: '14px 18px', marginBottom: '24px', fontWeight: 600, fontSize: '0.9rem'
+          }}>
+            <span style={{ fontSize: '1.1rem' }}>✓</span>
+            Trip ini sudah selesai. Rencana & checklist bersifat hanya-baca dan tidak bisa diubah lagi.
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '28px' }}>
           {/* Sidebar */}
@@ -267,14 +280,24 @@ const TripPlannerDetail = () => {
             </div>
 
             {/* Generate Button */}
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="btn btn-primary"
-              style={{ width: '100%', padding: '13px' }}
-            >
-              {generating ? 'Menyusun Rencana...' : plans.length > 0 ? 'Perbarui Itinerary' : '✨ Susun Itinerary Otomatis'}
-            </button>
+            {isCompleted ? (
+              <div style={{
+                textAlign: 'center', padding: '13px', borderRadius: '12px',
+                background: 'var(--secondary-light)', color: 'var(--secondary-deep)',
+                fontWeight: 700, fontSize: '0.85rem'
+              }}>
+                🔒 Rencana terkunci (trip selesai)
+              </div>
+            ) : (
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '13px' }}
+              >
+                {generating ? 'Menyusun Rencana...' : plans.length > 0 ? 'Perbarui Itinerary' : '✨ Susun Itinerary Otomatis'}
+              </button>
+            )}
           </div>
 
           {/* Main Content */}
@@ -288,7 +311,7 @@ const TripPlannerDetail = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontFamily: 'var(--font-serif)' }}>Rencana Perjalanan</h3>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  {!isEditing && plans.length > 0 && (
+                  {!isEditing && plans.length > 0 && !isCompleted && (
                     <button onClick={handleStartEdit} className="btn btn-outline" style={{ padding: '6px 14px', fontSize: '0.8rem' }}>
                       ✏️ Edit
                     </button>
@@ -350,13 +373,15 @@ const TripPlannerDetail = () => {
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h3 style={{ fontFamily: 'var(--font-serif)' }}>Checklist Barang</h3>
-                <button
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  className="btn btn-outline"
-                  style={{ padding: '6px 16px', fontSize: '0.82rem' }}
-                >
-                  {showAddForm ? 'Batal' : '+ Item Baru'}
-                </button>
+                {!isCompleted && (
+                  <button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="btn btn-outline"
+                    style={{ padding: '6px 16px', fontSize: '0.82rem' }}
+                  >
+                    {showAddForm ? 'Batal' : '+ Item Baru'}
+                  </button>
+                )}
               </div>
 
               {showAddForm && (
@@ -412,7 +437,8 @@ const TripPlannerDetail = () => {
                               type="checkbox"
                               checked={!!item.is_checked}
                               onChange={() => toggleChecklist(item.id)}
-                              style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: 'var(--primary)', flexShrink: 0 }}
+                              disabled={isCompleted}
+                              style={{ width: '18px', height: '18px', cursor: isCompleted ? 'default' : 'pointer', accentColor: 'var(--primary)', flexShrink: 0 }}
                             />
                             {editingItemId === item.id ? (
                               <div style={{ display: 'flex', gap: '8px', flex: 1 }}>
@@ -440,7 +466,7 @@ const TripPlannerDetail = () => {
                           </div>
 
                           <div className="checklist-item-actions">
-                            {editingItemId !== item.id && (
+                            {editingItemId !== item.id && !isCompleted && (
                               <>
                                 <button
                                   onClick={() => { setEditingItemId(item.id); setEditItem({ item_name: item.item_name, category: item.category }) }}

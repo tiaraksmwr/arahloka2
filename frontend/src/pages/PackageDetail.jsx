@@ -24,6 +24,7 @@ const PackageDetail = () => {
   const [weather, setWeather] = useState(null)
   const [weatherLoading, setWeatherLoading] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const dashboardPath = user.role === 'travel_provider' ? '/provider' : user.role === 'superadmin' ? '/admin' : '/tourist'
 
   useEffect(() => {
     const fetchPackage = async () => {
@@ -118,15 +119,15 @@ const PackageDetail = () => {
         justifyContent: 'space-between'
       }}>
         <Link to="/"><ArahLokaLogo /></Link>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <Link to="/" style={{ color: 'var(--text-gray)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Beranda</Link>
-          <Link to="/tourist" style={{ color: 'var(--text-gray)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Dashboard</Link>
-        </div>
-        <div>
-          {user.id
-            ? <span style={{ fontWeight: 700, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
-            : <Link to="/login" className="btn btn-primary" style={{ padding: '8px 20px' }}>Login</Link>
-          }
+        <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+          {user.id ? (
+            <>
+              <Link to={dashboardPath} className="btn btn-ghost" style={{ padding: '8px 16px', fontSize: '0.85rem' }}>Dashboard</Link>
+              <span style={{ fontWeight: 700, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
+            </>
+          ) : (
+            <Link to="/login" className="btn btn-primary" style={{ padding: '8px 20px' }}>Login</Link>
+          )}
         </div>
       </nav>
 

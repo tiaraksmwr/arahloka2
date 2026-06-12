@@ -151,24 +151,30 @@ const MemoryLane = ({ user, bookings }) => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '32px', alignItems: 'start' }}>
       {/* Create Form */}
       <div style={{
-        background: 'white', borderRadius: '24px', padding: '32px',
+        order: 2,
+        background: 'white', borderRadius: '24px', padding: '28px',
         border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-card)',
-        maxWidth: '760px', margin: '0 auto', width: '100%'
+        position: 'sticky', top: '88px'
       }}>
         <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '24px' }}>Buat Kartu Kenangan Baru</h3>
         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Pilih Trip</label>
-              <select value={form.booking_id} onChange={handleBookingChange} className="input">
+              <label className="form-label">Pilih Trip (sudah selesai)</label>
+              <select value={form.booking_id} onChange={handleBookingChange} className="input" required>
                 <option value="">-- Pilih Trip Selesai --</option>
-                {bookings.filter(b => b.status === 'accepted').map(b => (
+                {bookings.filter(b => b.completed_at).map(b => (
                   <option key={b.id} value={b.id}>{b.title}</option>
                 ))}
               </select>
+              {bookings.filter(b => b.completed_at).length === 0 && (
+                <small style={{ display: 'block', marginTop: '6px', color: 'var(--text-light)', fontSize: '0.74rem' }}>
+                  Belum ada trip selesai. Kartu kenangan baru bisa dibuat setelah trip ditandai selesai oleh provider.
+                </small>
+              )}
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Destinasi</label>
@@ -176,7 +182,7 @@ const MemoryLane = ({ user, bookings }) => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Judul Kenangan</label>
               <input type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} required className="input" placeholder="e.g. Senja di Pelataran Candi" />
@@ -200,7 +206,7 @@ const MemoryLane = ({ user, bookings }) => {
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginTop: '4px' }}>
-            <button type="submit" disabled={saving || !user.id} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
+            <button type="submit" disabled={saving || !user.id || !form.booking_id} className="btn btn-primary" style={{ flex: 1, padding: '12px' }}>
               {saving ? 'Menyimpan...' : 'Simpan ke Koleksi 📸'}
             </button>
             <button type="button" onClick={() => { setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' }); setImageFile(null) }} className="btn btn-ghost" style={{ padding: '12px 20px' }}>
@@ -211,7 +217,7 @@ const MemoryLane = ({ user, bookings }) => {
       </div>
 
       {/* My Cards */}
-      <div>
+      <div style={{ order: 1 }}>
         <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '20px', paddingBottom: '12px', borderBottom: '2px solid var(--primary-light)' }}>
           Koleksi Kartu Saya
         </h3>
@@ -220,7 +226,7 @@ const MemoryLane = ({ user, bookings }) => {
         ) : myCards.length === 0 ? (
           <p style={{ textAlign: 'center', color: 'var(--text-gray)', padding: '48px' }}>Belum ada kartu kenangan.</p>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' }}>
             {myCards.map(card => (
               <div key={card.id} className="memory-card">
                 {card.image_url && (
@@ -390,13 +396,18 @@ const StoryChallenge = ({ user, bookings }) => {
           <h3 style={{ fontFamily: 'var(--font-serif)', marginBottom: '20px' }}>Tulis Kisah Anda</h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Pilih Booking</label>
-              <select value={form.booking_id} onChange={handleBookingChange} className="input">
-                <option value="">-- Pilih Trip --</option>
-                {bookings.filter(b => b.status === 'accepted').map(b => (
+              <label className="form-label">Pilih Trip (sudah selesai)</label>
+              <select value={form.booking_id} onChange={handleBookingChange} className="input" required>
+                <option value="">-- Pilih Trip Selesai --</option>
+                {bookings.filter(b => b.completed_at).map(b => (
                   <option key={b.id} value={b.id}>{b.title}</option>
                 ))}
               </select>
+              {bookings.filter(b => b.completed_at).length === 0 && (
+                <small style={{ display: 'block', marginTop: '6px', color: 'var(--text-light)', fontSize: '0.74rem' }}>
+                  Belum ada trip selesai. Kisah baru bisa dibagikan setelah trip ditandai selesai oleh provider.
+                </small>
+              )}
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label className="form-label">Destinasi</label>
@@ -420,7 +431,7 @@ const StoryChallenge = ({ user, bookings }) => {
               <label className="form-label">Upload Foto</label>
               <input type="file" onChange={e => setImageFile(e.target.files[0])} accept="image/*" style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }} />
             </div>
-            <button type="submit" disabled={submitting || !user.id} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '4px' }}>
+            <button type="submit" disabled={submitting || !user.id || !form.booking_id} className="btn btn-primary" style={{ width: '100%', padding: '12px', marginTop: '4px' }}>
               {submitting ? 'Mengirim...' : 'Kirim Kisah 🚀'}
             </button>
           </form>

@@ -167,6 +167,15 @@ function initializeDatabase() {
       db.run("UPDATE packages SET image_url = 'https://images.unsplash.com/photo-1705905343745-6d901a93e946?w=800&q=80&auto=format&fit=crop' WHERE title = 'Borobudur Sunrise Culture' AND (image_url IS NULL OR image_url LIKE 'https://images.unsplash.com/%' OR image_url LIKE 'https://upload.wikimedia.org/%')");
     });
 
+    // Add completed_at column to bookings if it doesn't exist (trip completion)
+    db.all("PRAGMA table_info(bookings)", (err, columns) => {
+      if (err) return;
+      const columnNames = columns.map(c => c.name);
+      if (!columnNames.includes('completed_at')) {
+        db.run("ALTER TABLE bookings ADD COLUMN completed_at DATETIME");
+      }
+    });
+
     db.all("PRAGMA table_info(journey_studio)", (err, columns) => {
       if (err) return;
       const columnNames = columns.map(c => c.name);
@@ -333,6 +342,21 @@ const roleMiddleware = (allowedRoles) => {
 // Input validation helpers
 const isBlank = (v) => v === undefined || v === null || String(v).trim() === '';
 const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim());
+
+// Reject trip-planner checklist edits when the related trip is already completed
+const guardChecklistEditable = (itemId, userId, res, proceed) => {
+  db.get(
+    "SELECT b.completed_at FROM trip_checklist tc JOIN bookings b ON tc.booking_id = b.id WHERE tc.id = ? AND tc.tourist_id = ?",
+    [itemId, userId],
+    (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (row && row.completed_at) {
+        return res.status(403).json({ message: 'Trip sudah selesai, checklist tidak bisa diubah' });
+      }
+      proceed();
+    }
+  );
+};
 
 // Routes
 app.get('/api/health', (req, res) => {
@@ -745,6 +769,36 @@ app.patch('/api/bookings/:id/status', authMiddleware, roleMiddleware(['travel_pr
   });
 });
 
+// Provider marks an accepted booking as completed (trip finished)
+app.patch('/api/bookings/:id/complete', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
+  // Ensure the booking belongs to a package owned by this provider and is accepted
+  const verifyQuery = `
+    SELECT b.id, b.status, b.completed_at FROM bookings b
+    JOIN packages p ON b.package_id = p.id
+    WHERE b.id = ? AND p.provider_id = ?
+  `;
+
+  db.get(verifyQuery, [req.params.id, req.user.id], (err, booking) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!booking) return res.status(404).json({ message: 'Booking tidak ditemukan atau bukan milik Anda' });
+    if (booking.status !== 'accepted') {
+      return res.status(400).json({ message: 'Hanya booking yang sudah diterima yang bisa diselesaikan' });
+    }
+    if (booking.completed_at) {
+      return res.status(400).json({ message: 'Trip ini sudah ditandai selesai' });
+    }
+
+    db.run(
+      "UPDATE bookings SET completed_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [req.params.id],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Trip berhasil ditandai selesai' });
+      }
+    );
+  });
+});
+
 // Upload Route
 app.post('/api/upload', authMiddleware, upload.single('image'), (req, res) => {
   if (!req.file) return res.status(400).json({ message: 'No file uploaded' });
@@ -806,6 +860,7 @@ app.post('/api/trip-planner/:bookingId/generate', authMiddleware, roleMiddleware
   db.get(query, [bookingId, req.user.id], (err, trip) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!trip) return res.status(404).json({ message: 'Booking not found' });
+    if (trip.completed_at) return res.status(403).json({ message: 'Trip sudah selesai, rencana tidak bisa diubah' });
 
     const durationDays = parseInt(trip.duration) || 1;
     
@@ -880,15 +935,17 @@ app.post('/api/trip-planner/:bookingId/generate', authMiddleware, roleMiddleware
 });
 
 app.patch('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
-  db.run(
-    "UPDATE trip_checklist SET is_checked = (NOT is_checked), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
-    [req.params.itemId, req.user.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
-      res.json({ message: 'Checklist item updated' });
-    }
-  );
+  guardChecklistEditable(req.params.itemId, req.user.id, res, () => {
+    db.run(
+      "UPDATE trip_checklist SET is_checked = (NOT is_checked), updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
+      [req.params.itemId, req.user.id],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+        res.json({ message: 'Checklist item updated' });
+      }
+    );
+  });
 });
 
 app.post('/api/trip-planner/:bookingId/checklist', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
@@ -900,9 +957,10 @@ app.post('/api/trip-planner/:bookingId/checklist', authMiddleware, roleMiddlewar
   }
 
   // Validate booking belongs to user
-  db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
+  db.get("SELECT id, completed_at FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!booking) return res.status(404).json({ message: 'Booking not found or unauthorized' });
+    if (booking.completed_at) return res.status(403).json({ message: 'Trip sudah selesai, checklist tidak bisa diubah' });
 
     db.run(
       "INSERT INTO trip_checklist (booking_id, tourist_id, item_name, category) VALUES (?, ?, ?, ?)",
@@ -922,27 +980,31 @@ app.put('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['
     return res.status(400).json({ message: 'Nama item wajib diisi' });
   }
 
-  db.run(
-    "UPDATE trip_checklist SET item_name = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
-    [item_name, category, req.params.itemId, req.user.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
-      res.json({ message: 'Checklist item updated successfully' });
-    }
-  );
+  guardChecklistEditable(req.params.itemId, req.user.id, res, () => {
+    db.run(
+      "UPDATE trip_checklist SET item_name = ?, category = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tourist_id = ?",
+      [item_name, category, req.params.itemId, req.user.id],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+        res.json({ message: 'Checklist item updated successfully' });
+      }
+    );
+  });
 });
 
 app.delete('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
-  db.run(
-    "DELETE FROM trip_checklist WHERE id = ? AND tourist_id = ?",
-    [req.params.itemId, req.user.id],
-    function(err) {
-      if (err) return res.status(500).json({ error: err.message });
-      if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
-      res.json({ message: 'Checklist item deleted successfully' });
-    }
-  );
+  guardChecklistEditable(req.params.itemId, req.user.id, res, () => {
+    db.run(
+      "DELETE FROM trip_checklist WHERE id = ? AND tourist_id = ?",
+      [req.params.itemId, req.user.id],
+      function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ message: 'Item not found or unauthorized' });
+        res.json({ message: 'Checklist item deleted successfully' });
+      }
+    );
+  });
 });
 
 app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
@@ -957,9 +1019,10 @@ app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['to
   }
 
   // Validate booking belongs to user
-  db.get("SELECT package_id FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
+  db.get("SELECT package_id, completed_at FROM bookings WHERE id = ? AND tourist_id = ?", [bookingId, req.user.id], (err, booking) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!booking) return res.status(404).json({ message: 'Booking not found or unauthorized' });
+    if (booking.completed_at) return res.status(403).json({ message: 'Trip sudah selesai, rencana tidak bisa diubah' });
 
     db.get("SELECT id FROM trip_plans WHERE booking_id = ? AND plan_type = ?", [bookingId, plan_type], (err, plan) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -1007,15 +1070,15 @@ app.post('/api/memory-cards', authMiddleware, roleMiddleware(['tourist']), uploa
     );
   };
 
-  if (booking_id) {
-    db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!row) return res.status(403).json({ message: 'Unauthorized booking access' });
-      saveCard();
-    });
-  } else {
-    saveCard();
+  if (isBlank(booking_id)) {
+    return res.status(400).json({ message: 'Pilih trip yang sudah selesai untuk membuat kartu kenangan' });
   }
+  db.get("SELECT completed_at FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(403).json({ message: 'Booking tidak ditemukan atau bukan milik Anda' });
+    if (!row.completed_at) return res.status(400).json({ message: 'Trip belum selesai. Kartu kenangan hanya bisa dibuat setelah trip selesai.' });
+    saveCard();
+  });
 });
 
 app.get('/api/memory-cards/my', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
@@ -1059,15 +1122,15 @@ app.post('/api/story-challenges', authMiddleware, roleMiddleware(['tourist']), u
     );
   };
 
-  if (booking_id) {
-    db.get("SELECT id FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
-      if (err) return res.status(500).json({ error: err.message });
-      if (!row) return res.status(403).json({ message: 'Unauthorized booking access' });
-      saveStory();
-    });
-  } else {
-    saveStory();
+  if (isBlank(booking_id)) {
+    return res.status(400).json({ message: 'Pilih trip yang sudah selesai untuk membagikan kisah' });
   }
+  db.get("SELECT completed_at FROM bookings WHERE id = ? AND tourist_id = ?", [booking_id, req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(403).json({ message: 'Booking tidak ditemukan atau bukan milik Anda' });
+    if (!row.completed_at) return res.status(400).json({ message: 'Trip belum selesai. Kisah hanya bisa dibagikan setelah trip selesai.' });
+    saveStory();
+  });
 });
 
 app.get('/api/story-challenges', (req, res) => {

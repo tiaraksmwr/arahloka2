@@ -14,6 +14,29 @@ const ArahLokaLogo = () => (
   </div>
 )
 
+const svgBase = { viewBox: '0 0 24 24', width: 18, height: 18, fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' }
+
+const ICONS = {
+  dashboard: (
+    <svg {...svgBase}><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /></svg>
+  ),
+  compass: (
+    <svg {...svgBase}><circle cx="12" cy="12" r="10" /><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" /></svg>
+  ),
+  calendar: (
+    <svg {...svgBase}><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+  ),
+  map: (
+    <svg {...svgBase}><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" /><line x1="8" y1="2" x2="8" y2="18" /><line x1="16" y1="6" x2="16" y2="22" /></svg>
+  ),
+  camera: (
+    <svg {...svgBase}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+  ),
+  settings: (
+    <svg {...svgBase}><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+  ),
+}
+
 export const DashboardLayout = ({ title, subtitle, children, role }) => {
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -24,19 +47,19 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
-    navigate('/login')
+    navigate('/')
   }
 
   const navLinks = role === 'tourist'
     ? [
-        { to: '/tourist', label: 'Dashboard', icon: '◫' },
-        { to: '/destinasi', label: 'Jelajah Destinasi', icon: '🧭' },
-        { to: '/bookings', label: 'Booking Saya', icon: '🎫' },
-        { to: '/trips', label: 'Trip Planner', icon: '🗺️' },
-        { to: '/journey-studio', label: 'Journey Studio', icon: '◎' },
+        { to: '/tourist', label: 'Dashboard', icon: ICONS.dashboard },
+        { to: '/destinasi', label: 'Jelajah Destinasi', icon: ICONS.compass },
+        { to: '/bookings', label: 'Booking Saya', icon: ICONS.calendar },
+        { to: '/trips', label: 'Trip Planner', icon: ICONS.map },
+        { to: '/journey-studio', label: 'Journey Studio', icon: ICONS.camera },
       ]
     : [
-        { to: '/provider', label: 'Dashboard', icon: '◫' },
+        { to: '/provider', label: 'Dashboard', icon: ICONS.dashboard },
       ]
 
   return (
@@ -62,7 +85,7 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
             to="/pengaturan"
             className={`db-sidebar-link ${window.location.pathname === '/pengaturan' ? 'active' : ''}`}
           >
-            <span className="db-sidebar-icon">⚙</span>
+            <span className="db-sidebar-icon">{ICONS.settings}</span>
             Pengaturan
           </Link>
         </nav>
@@ -259,7 +282,7 @@ export const TouristDashboard = () => {
                     <div key={booking.id} className={`booking-card ${booking.status}`}>
                       <div className="booking-card-header">
                         <div className="booking-title">{booking.title}</div>
-                        <span className={`badge badge-${booking.status}`}>{statusLabel[booking.status]}</span>
+                        <span className={`badge ${booking.completed_at ? 'badge-completed' : `badge-${booking.status}`}`}>{booking.completed_at ? 'Selesai' : statusLabel[booking.status]}</span>
                       </div>
                       <div className="booking-meta">
                         <p>📅 {booking.travel_date}</p>
@@ -274,7 +297,7 @@ export const TouristDashboard = () => {
                         >
                           Persiapan Trip
                         </button>
-                        {booking.status === 'accepted' && (
+                        {booking.completed_at && (
                           <button
                             onClick={() => navigate('/journey-studio')}
                             className="btn btn-primary"
@@ -436,6 +459,18 @@ export const ProviderDashboard = () => {
     }
   }
 
+  const handleCompleteBooking = async (id) => {
+    const token = localStorage.getItem('token')
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_URL}/bookings/${id}/complete`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      fetchData()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menyelesaikan trip')
+    }
+  }
+
   const stats = [
     { label: 'Paket Aktif', value: packages.length, color: 'var(--primary)', icon: '🗺️' },
     { label: 'Total Booking', value: bookings.length, color: 'var(--secondary)', icon: '📅' },
@@ -497,9 +532,13 @@ export const ProviderDashboard = () => {
                         </td>
                         <td style={{ fontSize: '0.9rem' }}>{booking.package_title}</td>
                         <td>
-                          <span className={`badge badge-${booking.status}`}>
-                            {booking.status === 'pending' ? 'Menunggu' : booking.status === 'accepted' ? 'Diterima' : 'Ditolak'}
-                          </span>
+                          {booking.completed_at ? (
+                            <span className="badge badge-completed">Selesai</span>
+                          ) : (
+                            <span className={`badge badge-${booking.status}`}>
+                              {booking.status === 'pending' ? 'Menunggu' : booking.status === 'accepted' ? 'Diterima' : 'Ditolak'}
+                            </span>
+                          )}
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           {booking.status === 'pending' && (
@@ -515,6 +554,16 @@ export const ProviderDashboard = () => {
                                 style={{ padding: '4px 10px', fontSize: '0.72rem' }}
                               >Tolak</button>
                             </div>
+                          )}
+                          {booking.status === 'accepted' && !booking.completed_at && (
+                            <button
+                              onClick={() => handleCompleteBooking(booking.id)}
+                              className="btn btn-primary"
+                              style={{ padding: '4px 10px', fontSize: '0.72rem' }}
+                            >Tandai Selesai</button>
+                          )}
+                          {booking.completed_at && (
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-light)' }}>✓ Selesai</span>
                           )}
                         </td>
                       </tr>
