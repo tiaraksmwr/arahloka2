@@ -14,7 +14,7 @@ const ArahLokaLogo = () => (
   </div>
 )
 
-const DashboardLayout = ({ title, subtitle, children, role }) => {
+export const DashboardLayout = ({ title, subtitle, children, role }) => {
   const navigate = useNavigate()
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const initials = user.name
@@ -148,7 +148,7 @@ export const TouristDashboard = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
-            <button className="btn btn-primary" style={{ flexShrink: 0, padding: '0 20px' }}>Cari</button>
+            <button className="btn btn-primary" style={{ flexShrink: 0, alignSelf: 'stretch', padding: '0 24px', borderRadius: 'var(--radius-lg)' }}>Cari</button>
           </div>
 
           {/* Packages */}
@@ -164,7 +164,11 @@ export const TouristDashboard = () => {
               {filteredPackages.map(pkg => (
                 <div key={pkg.id} className="pkg-card">
                   <div className="pkg-img-wrap">
-                    <img src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70'} alt={pkg.title} />
+                    <img
+                      src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70'}
+                      alt={pkg.title}
+                      onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70' }}
+                    />
                     <span className="pkg-loc-badge">📍 {pkg.location}</span>
                   </div>
                   <div className="pkg-body">
@@ -194,7 +198,7 @@ export const TouristDashboard = () => {
         <aside>
           {/* Journey Studio Promo */}
           <div style={{
-            background: 'linear-gradient(135deg, var(--secondary) 0%, #2a6b44 100%)',
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%)',
             borderRadius: '20px',
             padding: '24px',
             marginBottom: '20px',

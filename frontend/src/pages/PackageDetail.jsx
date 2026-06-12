@@ -151,6 +151,7 @@ const PackageDetail = () => {
                 src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80'}
                 alt={pkg.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80' }}
               />
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, padding: '40px 32px 32px',

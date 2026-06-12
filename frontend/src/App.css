@@ -1020,8 +1020,9 @@
 }
 
 .db-sidebar {
-  background: var(--secondary);
-  color: white;
+  background: linear-gradient(175deg, #D8C6A2 0%, #C9B68C 100%);
+  color: var(--text-dark);
+  border-right: 1px solid rgba(74, 55, 40, 0.18);
   width: var(--sidebar-width);
   position: sticky;
   top: 0;
@@ -1030,16 +1031,16 @@
   display: flex;
   flex-direction: column;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.1) transparent;
+  scrollbar-color: rgba(0,0,0,0.12) transparent;
 }
 
 .db-sidebar::-webkit-scrollbar { width: 4px; }
 .db-sidebar::-webkit-scrollbar-track { background: transparent; }
-.db-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+.db-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
 
 .db-sidebar-brand {
   padding: 26px 20px 18px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
+  border-bottom: 1px solid var(--border-light);
   flex-shrink: 0;
 }
 
@@ -1047,7 +1048,7 @@
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 2.5px;
-  color: rgba(255,255,255,0.28);
+  color: var(--text-dark-mid);
   text-transform: uppercase;
   margin-top: 10px;
 }
@@ -1065,7 +1066,7 @@
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: rgba(255,255,255,0.22);
+  color: var(--text-muted);
   padding: 14px 12px 6px;
 }
 
@@ -1075,9 +1076,9 @@
   gap: 11px;
   padding: 10px 13px;
   border-radius: 12px;
-  color: rgba(255,255,255,0.58);
+  color: var(--text-dark-mid);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   transition: var(--transition-fast);
   text-decoration: none;
   cursor: pointer;
@@ -1088,22 +1089,21 @@
 }
 
 .db-sidebar-link:hover {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.88);
+  background: rgba(74, 55, 40, 0.08);
+  color: var(--text-dark);
 }
 
 .db-sidebar-link.active {
-  background: var(--primary);
-  color: white;
+  background: var(--primary-light);
+  color: var(--primary);
   font-weight: 700;
-  box-shadow: 0 4px 16px rgba(184, 80, 28, 0.4);
 }
 
 .db-sidebar-icon {
   width: 32px;
   height: 32px;
   border-radius: 9px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(74, 55, 40, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1113,7 +1113,7 @@
 }
 
 .db-sidebar-link.active .db-sidebar-icon {
-  background: rgba(255,255,255,0.16);
+  background: rgba(184, 80, 28, 0.16);
 }
 
 .db-sidebar-badge {
@@ -1128,12 +1128,12 @@
 }
 
 .db-sidebar-link.active .db-sidebar-badge {
-  background: rgba(255,255,255,0.22);
+  background: var(--primary);
 }
 
 .db-sidebar-footer {
   padding: 14px 12px 20px;
-  border-top: 1px solid rgba(255,255,255,0.07);
+  border-top: 1px solid var(--border-light);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -1145,7 +1145,7 @@
   align-items: center;
   gap: 11px;
   padding: 10px 12px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(74, 55, 40, 0.07);
   border-radius: 12px;
 }
 
@@ -1153,7 +1153,7 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1168,7 +1168,7 @@
   display: block;
   font-size: 0.82rem;
   font-weight: 700;
-  color: rgba(255,255,255,0.88);
+  color: var(--text-dark);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1177,7 +1177,7 @@
 .db-sidebar-useremail {
   display: block;
   font-size: 0.68rem;
-  color: rgba(255,255,255,0.35);
+  color: var(--text-dark-mid);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1188,7 +1188,7 @@
   align-items: center;
   gap: 11px;
   padding: 9px 13px;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-gray);
   font-size: 0.84rem;
   font-weight: 500;
   cursor: pointer;
@@ -1201,8 +1201,8 @@
 }
 
 .db-sidebar-logout:hover {
-  background: rgba(220, 38, 38, 0.12);
-  color: rgba(255, 120, 120, 0.9);
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
 }
 
 /* Dashboard Main */
@@ -1496,7 +1496,7 @@
 }
 
 .pkg-price-label { font-size: 0.65rem; color: var(--text-light); font-weight: 700; text-transform: uppercase; }
-.pkg-price { font-weight: 800; color: var(--secondary); font-size: 1.05rem; }
+.pkg-price { font-weight: 800; color: var(--accent-dark); font-size: 1.05rem; }
 
 
 /* ============================================================

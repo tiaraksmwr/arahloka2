@@ -161,6 +161,10 @@ function initializeDatabase() {
       db.run("UPDATE packages SET latitude = -8.4240, longitude = 115.3593 WHERE title = 'Desa Penglipuran Experience' AND latitude IS NULL");
       db.run("UPDATE packages SET latitude = -2.9700, longitude = 119.9000 WHERE title = 'Toraja Heritage Journey' AND latitude IS NULL");
       db.run("UPDATE packages SET latitude = -7.6079, longitude = 110.2038 WHERE title = 'Borobudur Sunrise Culture' AND latitude IS NULL");
+
+      // Fix broken/incorrect seed image URLs for existing dummy packages
+      db.run("UPDATE packages SET image_url = 'https://images.unsplash.com/photo-1727672100642-c8e8dfa7dca3?w=800&q=80&auto=format&fit=crop' WHERE title = 'Toraja Heritage Journey' AND (image_url IS NULL OR image_url LIKE 'https://images.unsplash.com/%' OR image_url LIKE 'https://upload.wikimedia.org/%')");
+      db.run("UPDATE packages SET image_url = 'https://images.unsplash.com/photo-1705905343745-6d901a93e946?w=800&q=80&auto=format&fit=crop' WHERE title = 'Borobudur Sunrise Culture' AND (image_url IS NULL OR image_url LIKE 'https://images.unsplash.com/%' OR image_url LIKE 'https://upload.wikimedia.org/%')");
     });
 
     db.all("PRAGMA table_info(journey_studio)", (err, columns) => {
@@ -279,7 +283,7 @@ function seedDatabase() {
       duration: '5 Hari 4 Malam',
       price: 4500000,
       quota: 8,
-      image_url: 'https://images.unsplash.com/photo-1621350614838-84241316f06a?auto=format&fit=crop&q=80&w=800',
+      image_url: 'https://images.unsplash.com/photo-1727672100642-c8e8dfa7dca3?w=800&q=80&auto=format&fit=crop',
       latitude: -2.9700,
       longitude: 119.9000
     },
@@ -290,7 +294,7 @@ function seedDatabase() {
       duration: '2 Hari 1 Malam',
       price: 1800000,
       quota: 12,
-      image_url: 'https://images.unsplash.com/photo-1596402184320-417d7178b2cd?auto=format&fit=crop&q=80&w=800',
+      image_url: 'https://images.unsplash.com/photo-1705905343745-6d901a93e946?w=800&q=80&auto=format&fit=crop',
       latitude: -7.6079,
       longitude: 110.2038
     }

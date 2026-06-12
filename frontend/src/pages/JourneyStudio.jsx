@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { DashboardLayout } from './RoleDashboards'
 
 const getFullImageUrl = (url) => {
   if (!url) return null
@@ -26,23 +26,10 @@ const StarRating = ({ rating, setRating, editable = true }) => (
   </div>
 )
 
-const ArahLokaLogo = () => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-    <svg width="32" height="32" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="20" cy="20" r="18" stroke="#B8501C" strokeWidth="2.5"/>
-      <path d="M20 6V12M20 28V34M6 20H12M28 20H34" stroke="#B8501C" strokeWidth="2" strokeLinecap="round"/>
-      <path d="M20 12L23 20L20 28L17 20L20 12Z" fill="#B8501C"/>
-      <circle cx="20" cy="20" r="3" fill="white"/>
-    </svg>
-    <span style={{ fontSize: '1.5rem', fontWeight: '900', color: '#231308', letterSpacing: '-0.5px', fontFamily: 'var(--font-serif)' }}>ArahLoka</span>
-  </div>
-)
-
 const JourneyStudio = () => {
   const [activeTab, setActiveTab] = useState('memory')
   const [userBookings, setUserBookings] = useState([])
   const user = JSON.parse(localStorage.getItem('user') || '{}')
-  const navigate = useNavigate()
 
   useEffect(() => {
     if (user.id && user.role === 'tourist') {
@@ -62,63 +49,14 @@ const JourneyStudio = () => {
     }
   }
 
-  const dashboardPath = user.role === 'tourist' ? '/tourist' : user.role === 'travel_provider' ? '/provider' : '/admin'
-
   return (
-    <div style={{ background: 'var(--bg-subtle)', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <nav style={{
-        position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(253,250,245,0.97)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--border-light)',
-        height: '68px',
-        display: 'flex', alignItems: 'center',
-        padding: '0 32px',
-        justifyContent: 'space-between'
-      }}>
-        <Link to="/"><ArahLokaLogo /></Link>
-        <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <Link to={dashboardPath} style={{ color: 'var(--text-gray)', textDecoration: 'none', fontSize: '0.9rem', fontWeight: 500 }}>Dashboard</Link>
-          <span style={{ color: 'var(--primary)', fontWeight: 700, fontSize: '0.9rem' }}>Journey Studio</span>
-        </div>
-        <div>
-          {user.id
-            ? <span style={{ fontWeight: 700, color: 'var(--text-dark)', fontSize: '0.9rem' }}>{user.name}</span>
-            : <Link to="/login" className="btn btn-primary" style={{ padding: '8px 20px' }}>Login</Link>
-          }
-        </div>
-      </nav>
-
-      {/* Hero */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--secondary) 0%, #2a6b44 60%, #1a4a2e 100%)',
-        padding: '56px 32px 48px',
-        textAlign: 'center',
-        color: 'white'
-      }}>
-        <div style={{ maxWidth: '640px', margin: '0 auto' }}>
-          <span style={{
-            display: 'inline-block',
-            background: 'rgba(255,255,255,0.12)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            color: 'rgba(255,255,255,0.9)',
-            padding: '4px 14px', borderRadius: '999px',
-            fontSize: '0.72rem', fontWeight: 800,
-            textTransform: 'uppercase', letterSpacing: '1px',
-            marginBottom: '16px'
-          }}>Studio Budaya</span>
-          <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '3rem', fontWeight: 800, color: 'white', marginBottom: '14px', lineHeight: 1.2 }}>
-            Journey Studio
-          </h1>
-          <p style={{ fontSize: '1.05rem', opacity: 0.85, lineHeight: 1.7, maxWidth: '560px', margin: '0 auto' }}>
-            Simpan kenangan perjalanan budaya Anda dan bagikan kisah autentik bersama komunitas penjelajah nusantara.
-          </p>
-        </div>
-      </div>
-
+    <DashboardLayout
+      title="Journey Studio"
+      subtitle="Simpan kenangan perjalanan budaya Anda dan bagikan kisah autentik bersama komunitas penjelajah nusantara."
+      role={user.role}
+    >
       {/* Tabs */}
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 32px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <div className="studio-tabs">
           {[
             { id: 'memory', label: 'Memory Lane', icon: '📸' },
@@ -136,13 +74,11 @@ const JourneyStudio = () => {
       </div>
 
       {/* Content */}
-      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 32px 80px' }}>
-        <div className="animate-fade-in">
-          {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
-          {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
-        </div>
+      <div className="animate-fade-in">
+        {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
+        {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
       </div>
-    </div>
+    </DashboardLayout>
   )
 }
 
