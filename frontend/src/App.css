@@ -914,6 +914,18 @@
   border: 1px solid var(--border-light);
 }
 
+.auth-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-gray);
+  margin-bottom: 20px;
+  transition: var(--transition-fast);
+}
+.auth-back-link:hover { color: var(--primary); transform: translateX(-3px); }
+
 .auth-logo-wrap { display: flex; justify-content: center; margin-bottom: 32px; }
 
 .auth-heading {

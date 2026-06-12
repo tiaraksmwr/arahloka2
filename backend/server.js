@@ -330,6 +330,10 @@ const roleMiddleware = (allowedRoles) => {
   };
 };
 
+// Input validation helpers
+const isBlank = (v) => v === undefined || v === null || String(v).trim() === '';
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v).trim());
+
 // Routes
 app.get('/api/health', (req, res) => {
   res.json({ status: "ok", message: "ArahLoka backend is running" });
@@ -339,8 +343,17 @@ app.get('/api/health', (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password, role } = req.body;
 
+  if (isBlank(name) || isBlank(email) || isBlank(password)) {
+    return res.status(400).json({ message: 'Nama, email, dan password wajib diisi' });
+  }
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ message: 'Format email tidak valid' });
+  }
+  if (String(password).length < 6) {
+    return res.status(400).json({ message: 'Password minimal 6 karakter' });
+  }
   if (!['tourist', 'travel_provider'].includes(role)) {
-    return res.status(400).json({ message: 'Invalid role' });
+    return res.status(400).json({ message: 'Role tidak valid' });
   }
 
   try {
@@ -353,7 +366,7 @@ app.post('/api/auth/register', async (req, res) => {
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE constraint failed: users.email')) {
-            return res.status(400).json({ message: 'Email already exists' });
+            return res.status(400).json({ message: 'Email sudah terdaftar' });
           }
           return res.status(500).json({ error: err.message });
         }
@@ -415,8 +428,14 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 // Update own profile (name, email, and optionally password)
 app.put('/api/profile', authMiddleware, (req, res) => {
   const { name, email, password } = req.body;
-  if (!name || !email) {
+  if (isBlank(name) || isBlank(email)) {
     return res.status(400).json({ message: 'Nama dan email wajib diisi' });
+  }
+  if (!isValidEmail(email)) {
+    return res.status(400).json({ message: 'Format email tidak valid' });
+  }
+  if (password && password.trim() && String(password).length < 6) {
+    return res.status(400).json({ message: 'Password minimal 6 karakter' });
   }
 
   db.get("SELECT id FROM users WHERE email = ? AND id != ?", [email, req.user.id], async (err, existing) => {
@@ -555,6 +574,17 @@ app.get('/api/provider/packages', authMiddleware, roleMiddleware(['travel_provid
 
 app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
   const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
+
+  if (isBlank(title) || isBlank(location) || isBlank(description) || isBlank(duration)) {
+    return res.status(400).json({ message: 'Judul, lokasi, deskripsi, dan durasi paket wajib diisi' });
+  }
+  if (isBlank(price) || isNaN(Number(price)) || Number(price) < 0) {
+    return res.status(400).json({ message: 'Harga harus berupa angka dan tidak boleh negatif' });
+  }
+  if (isBlank(quota) || isNaN(Number(quota)) || Number(quota) < 0) {
+    return res.status(400).json({ message: 'Kuota harus berupa angka dan tidak boleh negatif' });
+  }
+
   db.run(
     "INSERT INTO packages (provider_id, title, location, description, duration, price, quota, image_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [req.user.id, title, location, description, duration, price, quota, image_url, latitude, longitude],
@@ -567,6 +597,17 @@ app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (
 
 app.put('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
   const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
+
+  if (isBlank(title) || isBlank(location) || isBlank(description) || isBlank(duration)) {
+    return res.status(400).json({ message: 'Judul, lokasi, deskripsi, dan durasi paket wajib diisi' });
+  }
+  if (isBlank(price) || isNaN(Number(price)) || Number(price) < 0) {
+    return res.status(400).json({ message: 'Harga harus berupa angka dan tidak boleh negatif' });
+  }
+  if (isBlank(quota) || isNaN(Number(quota)) || Number(quota) < 0) {
+    return res.status(400).json({ message: 'Kuota harus berupa angka dan tidak boleh negatif' });
+  }
+
   db.run(
     "UPDATE packages SET title = ?, location = ?, description = ?, duration = ?, price = ?, quota = ?, image_url = ?, latitude = ?, longitude = ? WHERE id = ? AND provider_id = ?",
     [title, location, description, duration, price, quota, image_url, latitude, longitude, req.params.id, req.user.id],
@@ -621,8 +662,14 @@ app.get('/api/packages/:id', (req, res) => {
 app.post('/api/bookings', authMiddleware, roleMiddleware(['tourist']), (req, res) => {
   const { package_id, travel_date, participants, notes } = req.body;
 
-  if (!participants || participants < 1) {
-    return res.status(400).json({ message: 'Participants must be at least 1' });
+  if (isBlank(package_id)) {
+    return res.status(400).json({ message: 'Paket wajib dipilih' });
+  }
+  if (isBlank(travel_date)) {
+    return res.status(400).json({ message: 'Tanggal perjalanan wajib diisi' });
+  }
+  if (!participants || isNaN(Number(participants)) || Number(participants) < 1) {
+    return res.status(400).json({ message: 'Jumlah peserta minimal 1' });
   }
 
   // Validate package exists
@@ -849,7 +896,7 @@ app.post('/api/trip-planner/:bookingId/checklist', authMiddleware, roleMiddlewar
   const bookingId = req.params.bookingId;
 
   if (!item_name) {
-    return res.status(400).json({ message: 'Item name is required' });
+    return res.status(400).json({ message: 'Nama item wajib diisi' });
   }
 
   // Validate booking belongs to user
@@ -872,7 +919,7 @@ app.put('/api/trip-planner/checklist/:itemId', authMiddleware, roleMiddleware(['
   const { item_name, category } = req.body;
   
   if (!item_name) {
-    return res.status(400).json({ message: 'Item name is required' });
+    return res.status(400).json({ message: 'Nama item wajib diisi' });
   }
 
   db.run(
@@ -903,7 +950,10 @@ app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['to
   const bookingId = req.params.bookingId;
 
   if (!['daily', 'time'].includes(plan_type)) {
-    return res.status(400).json({ message: 'Invalid plan type' });
+    return res.status(400).json({ message: 'Tipe rencana tidak valid' });
+  }
+  if (isBlank(title) || isBlank(content)) {
+    return res.status(400).json({ message: 'Judul dan isi rencana wajib diisi' });
   }
 
   // Validate booking belongs to user
@@ -941,6 +991,10 @@ app.put('/api/trip-planner/:bookingId/plan', authMiddleware, roleMiddleware(['to
 app.post('/api/memory-cards', authMiddleware, roleMiddleware(['tourist']), upload.single('image'), (req, res) => {
   const { booking_id, destination, title, content, rating } = req.body;
   const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+  if (isBlank(destination) || isBlank(title) || isBlank(content)) {
+    return res.status(400).json({ message: 'Destinasi, judul, dan cerita wajib diisi' });
+  }
 
   const saveCard = () => {
     db.run(
@@ -989,6 +1043,10 @@ app.get('/api/memory-cards', (req, res) => {
 app.post('/api/story-challenges', authMiddleware, roleMiddleware(['tourist']), upload.single('image'), (req, res) => {
   const { booking_id, destination, title, content, rating } = req.body;
   const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+
+  if (isBlank(destination) || isBlank(title) || isBlank(content)) {
+    return res.status(400).json({ message: 'Destinasi, judul, dan cerita wajib diisi' });
+  }
 
   const saveStory = () => {
     db.run(

@@ -86,6 +86,7 @@ function Register() {
       {/* Right — Form */}
       <div className="auth-form-wrapper">
         <div className="auth-form-box animate-fade-in">
+          <Link to="/" className="auth-back-link">← Kembali ke Beranda</Link>
           <div className="auth-logo-wrap">
             <Link to="/"><ArahLokaLogo /></Link>
           </div>
