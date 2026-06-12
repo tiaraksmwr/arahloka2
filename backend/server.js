@@ -35,7 +35,11 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Database setup
-const dbPath = path.resolve(__dirname, 'database', 'arahloka.db');
+const dbDir = path.resolve(__dirname, 'database');
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+const dbPath = path.resolve(dbDir, 'arahloka.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err.message);

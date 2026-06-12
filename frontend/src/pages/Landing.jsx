@@ -37,13 +37,25 @@ const Logo = () => (
 )
 
 /* ─── Section chip label ─────────────────────────── */
-const Chip = ({ children, color = C.terra, bg = 'rgba(196,83,26,0.09)' }) => (
+const Chip = ({ children, color = C.terra, bg = 'rgba(196,83,26,0.09)', mb = '14px' }) => (
   <span style={{
-    display: 'inline-block', background: bg, color, border: `1px solid ${color}22`,
+    display: 'inline-flex', alignItems: 'center', background: bg, color, border: `1px solid ${color}22`,
     padding: '4px 14px', borderRadius: '999px',
     fontSize: '0.67rem', fontWeight: 800, letterSpacing: '2px', textTransform: 'uppercase',
-    marginBottom: '14px',
+    marginBottom: mb,
   }}>{children}</span>
+)
+
+/* ─── Mini Indonesia flag (renders consistently across OS) ── */
+const FlagID = () => (
+  <span style={{
+    display: 'inline-block', width: '15px', height: '11px', borderRadius: '2px',
+    overflow: 'hidden', marginRight: '7px', flexShrink: 0,
+    boxShadow: '0 0 0 1px rgba(0,0,0,0.08)', verticalAlign: 'middle',
+  }}>
+    <span style={{ display: 'block', height: '50%', background: '#CE1126' }}/>
+    <span style={{ display: 'block', height: '50%', background: '#FFFFFF' }}/>
+  </span>
 )
 
 /* ─── Section heading ────────────────────────────── */
@@ -77,9 +89,9 @@ export default function Landing() {
   ]
 
   const destinations = [
-    { name: 'Borobudur', loc: 'Jawa Tengah', cat: 'Candi', rating: '4.9', rev: '2.4rb', img: 'https://images.unsplash.com/photo-1596402184320-417d717867cd?w=700&q=80' },
+    { name: 'Borobudur', loc: 'Jawa Tengah', cat: 'Candi', rating: '4.9', rev: '2.4rb', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/25/Pradaksina.jpg/960px-Pradaksina.jpg' },
     { name: 'Ubud', loc: 'Bali', cat: 'Budaya', rating: '4.8', rev: '3.1rb', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=700&q=80' },
-    { name: 'Tana Toraja', loc: 'Sulawesi Selatan', cat: 'Tradisi', rating: '4.9', rev: '1.2rb', img: 'https://images.unsplash.com/photo-1626245199920-561b69519198?w=700&q=80' },
+    { name: 'Tana Toraja', loc: 'Sulawesi Selatan', cat: 'Tradisi', rating: '4.9', rev: '1.2rb', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Tongkonan_-_South_Sulawesi_Pavilion_TMII_%282025%29_-_img_01.jpg/960px-Tongkonan_-_South_Sulawesi_Pavilion_TMII_%282025%29_-_img_01.jpg' },
     { name: 'Labuan Bajo', loc: 'NTT', cat: 'Alam & Budaya', rating: '4.7', rev: '1.8rb', img: 'https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?w=700&q=80' },
     { name: 'Yogyakarta', loc: 'D.I. Yogyakarta', cat: 'Seni & Budaya', rating: '4.8', rev: '4.5rb', img: 'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?w=700&q=80' },
     { name: 'Raja Ampat', loc: 'Papua Barat', cat: 'Alam', rating: '5.0', rev: '980', img: 'https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?w=700&q=80' },
@@ -98,10 +110,10 @@ export default function Landing() {
 
   const events = [
     { title: 'Festival Bau Nyale', loc: 'Lombok, NTB', date: '15–17 FEB', month: 'FEB', day: '15', cat: 'Festival Budaya', img: 'https://images.unsplash.com/photo-1533105079780-92b9be482077?w=400&q=75' },
-    { title: 'Sekaten Yogyakarta', loc: 'Yogyakarta', date: '05–07 MAR', month: 'MAR', day: '05', cat: 'Tradisi & Budaya', img: 'https://images.unsplash.com/photo-1605634509531-9252bc30541c?w=400&q=75' },
+    { title: 'Sekaten Yogyakarta', loc: 'Yogyakarta', date: '05–07 MAR', month: 'MAR', day: '05', cat: 'Tradisi & Budaya', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c9/Gunungan_darat_during_Garebeg_Mulud_Yogyakarta_Dec_2017_Pj_IMG_4517sm.jpg/960px-Gunungan_darat_during_Garebeg_Mulud_Yogyakarta_Dec_2017_Pj_IMG_4517sm.jpg' },
     { title: 'Festival Danau Toba', loc: 'Sumatera Utara', date: '24–26 FEB', month: 'FEB', day: '24', cat: 'Festival Budaya', img: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=400&q=75' },
     { title: 'Pesta Kesenian Bali', loc: 'Denpasar, Bali', date: '15–17 JUN', month: 'JUN', day: '15', cat: 'Seni & Budaya', img: 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=75' },
-    { title: 'Festival Lembah Baliem', loc: 'Papua Pegunungan', date: '10–12 AUG', month: 'AUG', day: '10', cat: 'Festival Budaya', img: 'https://images.unsplash.com/photo-1596402184320-417d717867cd?w=400&q=75' },
+    { title: 'Festival Lembah Baliem', loc: 'Papua Pegunungan', date: '10–12 AUG', month: 'AUG', day: '10', cat: 'Festival Budaya', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/20170903_Papouasie_Baliem_valley_15.jpg/960px-20170903_Papouasie_Baliem_valley_15.jpg' },
     { title: 'Pesta Bondan Jogyakarta', loc: 'Yogyakarta', date: '20–22 SEP', month: 'SEP', day: '20', cat: 'Seni Pertunjukan', img: 'https://images.unsplash.com/photo-1584810359583-96fc3448beaa?w=400&q=75' },
   ]
 
@@ -193,7 +205,7 @@ export default function Landing() {
               {/* LEFT: Text content */}
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                  <Chip color={C.green} bg="rgba(29,79,50,0.09)">🇮🇩 Platform Wisata Budaya</Chip>
+                  <Chip color={C.green} bg="rgba(29,79,50,0.09)" mb={0}><FlagID />Platform Wisata Budaya</Chip>
                   <span style={{
                     background: C.terra, color: 'white', fontSize: '0.65rem', fontWeight: 800,
                     padding: '3px 10px', borderRadius: '999px', letterSpacing: '1px',
@@ -306,7 +318,7 @@ export default function Landing() {
 
                 {/* Floating review badge — bottom left */}
                 <div style={{
-                  position: 'absolute', bottom: '20px', left: '-18px',
+                  position: 'absolute', bottom: '-52px', left: '-18px',
                   background: 'white', borderRadius: '16px', padding: '11px 16px',
                   boxShadow: '0 8px 28px rgba(26,14,6,0.16)',
                   border: `1px solid ${C.border}`,
