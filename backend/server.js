@@ -412,6 +412,38 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   });
 });
 
+// Update own profile (name, email, and optionally password)
+app.put('/api/profile', authMiddleware, (req, res) => {
+  const { name, email, password } = req.body;
+  if (!name || !email) {
+    return res.status(400).json({ message: 'Nama dan email wajib diisi' });
+  }
+
+  db.get("SELECT id FROM users WHERE email = ? AND id != ?", [email, req.user.id], async (err, existing) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (existing) return res.status(409).json({ message: 'Email sudah dipakai akun lain' });
+
+    const done = (err) => {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get("SELECT id, name, email, role, status FROM users WHERE id = ?", [req.user.id], (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(user);
+      });
+    };
+
+    try {
+      if (password && password.trim()) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.run("UPDATE users SET name = ?, email = ?, password = ? WHERE id = ?", [name, email, hashedPassword, req.user.id], done);
+      } else {
+        db.run("UPDATE users SET name = ?, email = ? WHERE id = ?", [name, email, req.user.id], done);
+      }
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+});
+
 // Admin Routes
 app.get('/api/admin/pending-users', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
   db.all("SELECT id, name, email, role, status, created_at FROM users WHERE status = 'pending'", [], (err, rows) => {

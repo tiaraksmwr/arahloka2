@@ -30,6 +30,9 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
   const navLinks = role === 'tourist'
     ? [
         { to: '/tourist', label: 'Dashboard', icon: '◫' },
+        { to: '/destinasi', label: 'Jelajah Destinasi', icon: '🧭' },
+        { to: '/bookings', label: 'Booking Saya', icon: '🎫' },
+        { to: '/trips', label: 'Trip Planner', icon: '🗺️' },
         { to: '/journey-studio', label: 'Journey Studio', icon: '◎' },
       ]
     : [
@@ -55,10 +58,13 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
               {link.label}
             </Link>
           ))}
-          <a href="#" className="db-sidebar-link">
+          <Link
+            to="/pengaturan"
+            className={`db-sidebar-link ${window.location.pathname === '/pengaturan' ? 'active' : ''}`}
+          >
             <span className="db-sidebar-icon">⚙</span>
             Pengaturan
-          </a>
+          </Link>
         </nav>
 
         <div className="db-sidebar-footer">

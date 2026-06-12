@@ -9,6 +9,10 @@ import { TouristDashboard, ProviderDashboard } from './pages/RoleDashboards'
 import PackageDetail from './pages/PackageDetail'
 import JourneyStudio from './pages/JourneyStudio'
 import TripPlannerDetail from './pages/TripPlannerDetail'
+import JelajahDestinasi from './pages/JelajahDestinasi'
+import BookingSaya from './pages/BookingSaya'
+import TripPlanner from './pages/TripPlanner'
+import PengaturanProfil from './pages/PengaturanProfil'
 
 function App() {
   return (
@@ -24,6 +28,10 @@ function App() {
         <Route path="/packages/:id" element={<PackageDetail />} />
         <Route path="/journey-studio" element={<JourneyStudio />} />
         <Route path="/trip-planner/:bookingId" element={<TripPlannerDetail />} />
+        <Route path="/destinasi" element={<JelajahDestinasi />} />
+        <Route path="/bookings" element={<BookingSaya />} />
+        <Route path="/trips" element={<TripPlanner />} />
+        <Route path="/pengaturan" element={<PengaturanProfil />} />
       </Routes>
     </Router>
   )
