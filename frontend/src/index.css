@@ -129,6 +129,28 @@ button, input, select, textarea {
 
 img { display: block; max-width: 100%; }
 
+/* Themed selection + scrollbar for a more polished feel */
+::selection { background: var(--primary-light); color: var(--primary-deep); }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hover) transparent;
+}
+::-webkit-scrollbar { width: 11px; height: 11px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 8px;
+  border: 3px solid var(--bg-page);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Accessible focus ring */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* ===========================
    LAYOUT UTILITIES
    =========================== */

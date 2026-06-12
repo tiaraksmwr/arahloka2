@@ -141,6 +141,24 @@ export const TouristDashboard = () => {
       subtitle={`Selamat datang, ${user.name}. Temukan destinasi budaya terbaik.`}
       role="tourist"
     >
+      {/* Summary stats */}
+      <div className="db-stat-grid">
+        {[
+          { label: 'Paket Tersedia', value: packages.length, icon: '🧭', color: 'var(--primary)', bg: 'var(--primary-light)' },
+          { label: 'Total Booking', value: bookings.length, icon: '🎫', color: 'var(--accent-dark)', bg: 'var(--accent-light)' },
+          { label: 'Trip Diterima', value: bookings.filter(b => b.status === 'accepted').length, icon: '✅', color: 'var(--secondary)', bg: 'var(--secondary-light)' },
+          { label: 'Menunggu Konfirmasi', value: bookings.filter(b => b.status === 'pending').length, icon: '⏳', color: 'var(--warning)', bg: 'var(--warning-light)' },
+        ].map(stat => (
+          <div key={stat.label} className="db-stat-card" style={{ '--stat-color': stat.color }}>
+            <div className="db-stat-header">
+              <span className="db-stat-label">{stat.label}</span>
+              <span className="db-stat-icon" style={{ background: stat.bg, color: stat.color }}>{stat.icon}</span>
+            </div>
+            <div className="db-stat-value">{loading ? '–' : stat.value}</div>
+          </div>
+        ))}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
         {/* Left: Package Explorer */}
         <div>

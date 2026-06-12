@@ -319,7 +319,7 @@ const StoryChallenge = ({ user, bookings }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {/* Challenge Banner */}
         <div style={{
-          background: 'linear-gradient(135deg, var(--secondary) 0%, #1a4a2e 100%)',
+          background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-deep) 100%)',
           borderRadius: '20px', padding: '28px 32px', color: 'white'
         }}>
           <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '1.5px', opacity: 0.7, marginBottom: '8px' }}>
@@ -349,7 +349,7 @@ const StoryChallenge = ({ user, bookings }) => {
                 <span style={{ color: 'var(--text-gray)', fontWeight: 700, fontSize: '0.82rem' }}>📍 {story.destination}</span>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '0.92rem' }}>{story.user_name}</div>
+                <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.92rem' }}>{story.user_name}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-light)' }}>{new Date(story.created_at).toLocaleDateString('id-ID')}</div>
               </div>
             </div>
