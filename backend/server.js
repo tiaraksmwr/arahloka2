@@ -581,6 +581,71 @@ app.patch('/api/admin/users/:id/approve', authMiddleware, roleMiddleware(['super
   });
 });
 
+// Delete a user. Guard: cannot delete self, cannot delete superadmin,
+// cannot delete when user still has active (in-progress) bookings.
+//   - tourist: any booking where status='accepted' AND completed_at IS NULL,
+//              OR status='pending' is considered active.
+//   - provider: any booking on their packages where status='accepted' AND
+//              completed_at IS NULL, OR status='pending' is considered active.
+app.delete('/api/admin/users/:id', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
+  const userId = Number(req.params.id);
+  if (!userId) return res.status(400).json({ message: 'User id tidak valid' });
+  if (userId === req.user.id) {
+    return res.status(400).json({ message: 'Tidak bisa menghapus akun Anda sendiri' });
+  }
+
+  db.get("SELECT id, name, role FROM users WHERE id = ?", [userId], (err, user) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!user) return res.status(404).json({ message: 'Pengguna tidak ditemukan' });
+    if (user.role === 'superadmin') {
+      return res.status(403).json({ message: 'Akun superadmin tidak bisa dihapus' });
+    }
+
+    const activeCondition = "(status = 'pending' OR (status = 'accepted' AND completed_at IS NULL))";
+    const activeQuery = user.role === 'tourist'
+      ? `SELECT COUNT(*) AS c FROM bookings WHERE tourist_id = ? AND ${activeCondition}`
+      : `SELECT COUNT(*) AS c FROM bookings b
+         JOIN packages p ON b.package_id = p.id
+         WHERE p.provider_id = ? AND ${activeCondition}`;
+
+    db.get(activeQuery, [userId], (err, row) => {
+      if (err) return res.status(500).json({ error: err.message });
+      if (row.c > 0) {
+        const msg = user.role === 'tourist'
+          ? `Tidak bisa menghapus turis: masih ada ${row.c} booking yang sedang berjalan atau menunggu konfirmasi.`
+          : `Tidak bisa menghapus provider: masih ada ${row.c} booking aktif yang belum diselesaikan.`;
+        return res.status(409).json({ message: msg });
+      }
+
+      // Safe to remove. Cascade-clean dependent rows so we don't leave orphans.
+      db.serialize(() => {
+        db.run("BEGIN TRANSACTION");
+        if (user.role === 'tourist') {
+          db.run("DELETE FROM trip_checklist WHERE tourist_id = ?", [userId]);
+          db.run("DELETE FROM trip_plans WHERE tourist_id = ?", [userId]);
+          db.run("DELETE FROM journey_studio WHERE user_id = ?", [userId]);
+          db.run("DELETE FROM bookings WHERE tourist_id = ?", [userId]);
+        } else if (user.role === 'travel_provider') {
+          // Remove bookings on this provider's packages first
+          db.run(
+            `DELETE FROM bookings WHERE package_id IN (SELECT id FROM packages WHERE provider_id = ?)`,
+            [userId]
+          );
+          db.run("DELETE FROM packages WHERE provider_id = ?", [userId]);
+        }
+        db.run("DELETE FROM users WHERE id = ?", [userId], function(err) {
+          if (err) {
+            db.run("ROLLBACK");
+            return res.status(500).json({ error: err.message });
+          }
+          db.run("COMMIT");
+          res.json({ message: `Pengguna ${user.name} berhasil dihapus.` });
+        });
+      });
+    });
+  });
+});
+
 app.patch('/api/admin/users/:id/reject', authMiddleware, roleMiddleware(['superadmin']), (req, res) => {
   db.run("UPDATE users SET status = 'rejected' WHERE id = ?", [req.params.id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -596,7 +661,19 @@ app.get('/api/provider/packages', authMiddleware, roleMiddleware(['travel_provid
   });
 });
 
-app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
+// Normalize lat/lon: blank -> null, otherwise number. If missing, auto-geocode from location text.
+const resolveCoords = async (latitude, longitude, location) => {
+  const latNum = isBlank(latitude) ? null : Number(latitude);
+  const lonNum = isBlank(longitude) ? null : Number(longitude);
+  if (latNum !== null && lonNum !== null && !Number.isNaN(latNum) && !Number.isNaN(lonNum)) {
+    return { lat: latNum, lon: lonNum };
+  }
+  const geo = await geocodeLocation(location);
+  if (geo) return { lat: geo.lat, lon: geo.lon };
+  return { lat: null, lon: null };
+};
+
+app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), async (req, res) => {
   const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
 
   if (isBlank(title) || isBlank(location) || isBlank(description) || isBlank(duration)) {
@@ -609,9 +686,11 @@ app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (
     return res.status(400).json({ message: 'Kuota harus berupa angka dan tidak boleh negatif' });
   }
 
+  const { lat, lon } = await resolveCoords(latitude, longitude, location);
+
   db.run(
     "INSERT INTO packages (provider_id, title, location, description, duration, price, quota, image_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [req.user.id, title, location, description, duration, price, quota, image_url, latitude, longitude],
+    [req.user.id, title, location, description, duration, price, quota, image_url, lat, lon],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       res.status(201).json({ id: this.lastID, message: 'Package created successfully' });
@@ -619,7 +698,7 @@ app.post('/api/packages', authMiddleware, roleMiddleware(['travel_provider']), (
   );
 });
 
-app.put('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider']), (req, res) => {
+app.put('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider']), async (req, res) => {
   const { title, location, description, duration, price, quota, image_url, latitude, longitude } = req.body;
 
   if (isBlank(title) || isBlank(location) || isBlank(description) || isBlank(duration)) {
@@ -632,9 +711,11 @@ app.put('/api/packages/:id', authMiddleware, roleMiddleware(['travel_provider'])
     return res.status(400).json({ message: 'Kuota harus berupa angka dan tidak boleh negatif' });
   }
 
+  const { lat, lon } = await resolveCoords(latitude, longitude, location);
+
   db.run(
     "UPDATE packages SET title = ?, location = ?, description = ?, duration = ?, price = ?, quota = ?, image_url = ?, latitude = ?, longitude = ? WHERE id = ? AND provider_id = ?",
-    [title, location, description, duration, price, quota, image_url, latitude, longitude, req.params.id, req.user.id],
+    [title, location, description, duration, price, quota, image_url, lat, lon, req.params.id, req.user.id],
     function(err) {
       if (err) return res.status(500).json({ error: err.message });
       if (this.changes === 0) return res.status(404).json({ message: 'Package not found or unauthorized' });
@@ -1161,11 +1242,59 @@ app.get('/api/journey-studio', (req, res) => {
   });
 });
 
+// Geocode helper: resolve free-text location -> {lat, lon, name}
+// Uses Open-Meteo's free geocoding API (no key required)
+const geocodeCache = new Map();
+const geocodeLocation = async (location) => {
+  const key = String(location).trim().toLowerCase();
+  if (!key) return null;
+  if (geocodeCache.has(key)) return geocodeCache.get(key);
+
+  // Try the raw query first, then progressively simpler variants
+  // (e.g. "Ubud, Bali" -> "Ubud" -> "Bali")
+  const variants = [location];
+  if (location.includes(',')) {
+    location.split(',').forEach(part => {
+      const p = part.trim();
+      if (p && !variants.includes(p)) variants.push(p);
+    });
+  }
+
+  for (const q of variants) {
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=1&language=id&format=json`;
+      const r = await fetch(url);
+      if (!r.ok) continue;
+      const data = await r.json();
+      const hit = data?.results?.[0];
+      if (hit && hit.latitude && hit.longitude) {
+        const resolved = { lat: hit.latitude, lon: hit.longitude, name: hit.name };
+        geocodeCache.set(key, resolved);
+        return resolved;
+      }
+    } catch (e) {
+      // try next variant
+    }
+  }
+  geocodeCache.set(key, null);
+  return null;
+};
+
 // Weather Route
 app.get('/api/weather', async (req, res) => {
-  const { lat, lon } = req.query;
+  let { lat, lon, location } = req.query;
+
+  // Fallback: resolve lat/lon from a location name when not provided
+  if ((!lat || !lon) && location) {
+    const geo = await geocodeLocation(location);
+    if (geo) {
+      lat = geo.lat;
+      lon = geo.lon;
+    }
+  }
+
   if (!lat || !lon) {
-    return res.status(400).json({ message: 'Latitude and longitude are required' });
+    return res.status(400).json({ message: 'Latitude/longitude atau location wajib diisi' });
   }
 
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
@@ -1174,7 +1303,7 @@ app.get('/api/weather', async (req, res) => {
     const response = await fetch(url);
     if (!response.ok) throw new Error('Weather API response not ok');
     const data = await response.json();
-    
+
     const weatherCodes = {
       0: 'Cerah',
       1: 'Cerah Berawan',

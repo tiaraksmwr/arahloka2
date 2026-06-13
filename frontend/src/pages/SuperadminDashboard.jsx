@@ -84,6 +84,27 @@ function SuperadminDashboard() {
     }
   }
 
+  const handleDeleteUser = async (user) => {
+    const note = user.role === 'tourist'
+      ? '\n\nTuris hanya bisa dihapus jika semua booking-nya sudah selesai atau ditolak.'
+      : user.role === 'travel_provider'
+        ? '\n\nProvider hanya bisa dihapus jika tidak ada booking aktif (masih pending atau accepted tapi belum selesai) pada paket-paketnya.'
+        : ''
+    if (!window.confirm(`Hapus pengguna "${user.name}" (${user.email})?${note}\n\nTindakan ini akan menghapus seluruh data terkait dan tidak bisa dibatalkan.`)) {
+      return
+    }
+    try {
+      const token = localStorage.getItem('token')
+      const res = await axios.delete(`${import.meta.env.VITE_API_URL}/admin/users/${user.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      alert(res.data.message || 'Pengguna berhasil dihapus')
+      fetchAllData()
+    } catch (err) {
+      alert(err.response?.data?.message || 'Gagal menghapus pengguna')
+    }
+  }
+
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
@@ -310,6 +331,7 @@ function SuperadminDashboard() {
                     <th>Role</th>
                     <th>Status</th>
                     <th>Terdaftar</th>
+                    <th style={{ textAlign: 'right' }}>Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -343,6 +365,19 @@ function SuperadminDashboard() {
                       </td>
                       <td style={{ color: 'var(--text-gray)', fontSize: '0.85rem' }}>
                         {new Date(user.created_at).toLocaleDateString('id-ID')}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        {user.role === 'superadmin' ? (
+                          <span style={{ fontSize: '0.72rem', color: 'var(--text-light)' }}>—</span>
+                        ) : (
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            className="btn btn-danger"
+                            style={{ padding: '5px 12px', fontSize: '0.74rem' }}
+                          >
+                            Hapus
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}

@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import PendingApproval from './pages/PendingApproval'
 import SuperadminDashboard from './pages/SuperadminDashboard'
 import { TouristDashboard, ProviderDashboard } from './pages/RoleDashboards'
+import ProviderPackages from './pages/ProviderPackages'
 import PackageDetail from './pages/PackageDetail'
 import JourneyStudio from './pages/JourneyStudio'
 import TripPlannerDetail from './pages/TripPlannerDetail'
@@ -25,6 +26,7 @@ function App() {
         <Route path="/admin" element={<SuperadminDashboard />} />
         <Route path="/tourist" element={<TouristDashboard />} />
         <Route path="/provider" element={<ProviderDashboard />} />
+        <Route path="/provider/packages" element={<ProviderPackages />} />
         <Route path="/packages/:id" element={<PackageDetail />} />
         <Route path="/journey-studio" element={<JourneyStudio />} />
         <Route path="/trip-planner/:bookingId" element={<TripPlannerDetail />} />

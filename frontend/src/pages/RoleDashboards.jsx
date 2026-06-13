@@ -60,6 +60,7 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
       ]
     : [
         { to: '/provider', label: 'Dashboard', icon: ICONS.dashboard },
+        { to: '/provider/packages', label: 'Kelola Paket', icon: ICONS.map },
       ]
 
   return (
@@ -120,6 +121,8 @@ export const DashboardLayout = ({ title, subtitle, children, role }) => {
 export const TouristDashboard = () => {
   const [packages, setPackages] = useState([])
   const [bookings, setBookings] = useState([])
+  const [memoryCount, setMemoryCount] = useState(0)
+  const [storyCount, setStoryCount] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
@@ -136,14 +139,17 @@ export const TouristDashboard = () => {
   const fetchData = async () => {
     try {
       const token = localStorage.getItem('token')
-      const [pkgsRes, bookingsRes] = await Promise.all([
+      const headers = { Authorization: `Bearer ${token}` }
+      const [pkgsRes, bookingsRes, memRes, storyRes] = await Promise.all([
         axios.get(`${import.meta.env.VITE_API_URL}/packages`),
-        axios.get(`${import.meta.env.VITE_API_URL}/bookings/my`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        axios.get(`${import.meta.env.VITE_API_URL}/bookings/my`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/memory-cards/my`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/story-challenges`)
       ])
       setPackages(pkgsRes.data)
       setBookings(bookingsRes.data)
+      setMemoryCount(memRes.data.length)
+      setStoryCount(storyRes.data.filter(s => s.user_id === user.id).length)
       setLoading(false)
     } catch (err) {
       console.error('Error fetching data:', err)
@@ -181,6 +187,137 @@ export const TouristDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* Challenge Berhadiah */}
+      {(() => {
+        const completedTrips = bookings.filter(b => b.completed_at).length
+        const challenges = [
+          {
+            id: 'trip-maestro',
+            title: 'Trip Maestro Nusantara',
+            desc: 'Selesaikan 3 perjalanan budaya untuk membuktikan dirimu sang penjelajah.',
+            theme: 'Petualang Sejati',
+            current: completedTrips,
+            target: 3,
+            reward: 'Voucher trip Rp 500.000',
+            icon: '🏆',
+            gradient: 'linear-gradient(135deg, #b8501c 0%, #f7b733 100%)'
+          },
+          {
+            id: 'storyteller',
+            title: 'Storyteller of the Archipelago',
+            desc: 'Bagikan 5 kisah budaya autentik di Community Story.',
+            theme: 'Pencerita Budaya',
+            current: storyCount,
+            target: 5,
+            reward: 'Merchandise eksklusif ArahLoka',
+            icon: '📖',
+            gradient: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)'
+          },
+          {
+            id: 'memory-keeper',
+            title: 'Memory Keeper Champion',
+            desc: 'Kumpulkan 10 Memory Lane Card dari beragam destinasi.',
+            theme: 'Kolektor Kenangan',
+            current: memoryCount,
+            target: 10,
+            reward: 'Photobook digital premium',
+            icon: '📸',
+            gradient: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)'
+          }
+        ]
+        return (
+          <div style={{ marginBottom: '28px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '14px', padding: '0 4px' }}>
+              <div>
+                <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', fontWeight: 800, margin: 0 }}>
+                  ✨ Challenge Berhadiah
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--text-gray)' }}>
+                  Selesaikan challenge bertema budaya untuk mendapatkan hadiah eksklusif.
+                </p>
+              </div>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-light)', fontWeight: 700 }}>
+                {challenges.filter(c => c.current >= c.target).length} / {challenges.length} selesai
+              </span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {challenges.map(c => {
+                const pct = Math.min(100, Math.round((c.current / c.target) * 100))
+                const done = c.current >= c.target
+                return (
+                  <div key={c.id} style={{
+                    position: 'relative',
+                    borderRadius: '20px',
+                    padding: '22px 22px 18px',
+                    color: 'white',
+                    background: c.gradient,
+                    boxShadow: 'var(--shadow-card)',
+                    overflow: 'hidden'
+                  }}>
+                    {done && (
+                      <span style={{
+                        position: 'absolute', top: '14px', right: '14px',
+                        background: 'rgba(255,255,255,0.25)', backdropFilter: 'blur(8px)',
+                        padding: '4px 10px', borderRadius: '999px',
+                        fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.5px'
+                      }}>SELESAI ✓</span>
+                    )}
+                    <div style={{ fontSize: '2rem', marginBottom: '6px' }}>{c.icon}</div>
+                    <div style={{ fontSize: '0.66rem', fontWeight: 800, letterSpacing: '1px', opacity: 0.85, textTransform: 'uppercase' }}>
+                      {c.theme}
+                    </div>
+                    <h4 style={{ color: 'white', fontFamily: 'var(--font-serif)', fontSize: '1.1rem', margin: '4px 0 8px' }}>
+                      {c.title}
+                    </h4>
+                    <p style={{ fontSize: '0.82rem', opacity: 0.92, lineHeight: 1.55, marginBottom: '14px', minHeight: '44px' }}>
+                      {c.desc}
+                    </p>
+                    {/* Progress */}
+                    <div style={{ marginBottom: '10px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', fontWeight: 800, marginBottom: '4px' }}>
+                        <span>Progress</span>
+                        <span>{c.current} / {c.target}</span>
+                      </div>
+                      <div style={{ height: '8px', background: 'rgba(255,255,255,0.2)', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{
+                          width: `${pct}%`, height: '100%',
+                          background: 'rgba(255,255,255,0.9)',
+                          borderRadius: '999px',
+                          transition: 'width 0.4s ease'
+                        }} />
+                      </div>
+                    </div>
+                    {/* Reward */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      padding: '8px 12px',
+                      background: 'rgba(255,255,255,0.15)',
+                      backdropFilter: 'blur(8px)',
+                      borderRadius: '12px',
+                      fontSize: '0.78rem', fontWeight: 700
+                    }}>
+                      <span>🎁</span><span>Hadiah: {c.reward}</span>
+                    </div>
+                    <button
+                      onClick={() => navigate('/journey-studio')}
+                      style={{
+                        marginTop: '12px', width: '100%',
+                        background: 'rgba(255,255,255,0.95)',
+                        color: '#231308', border: 'none',
+                        padding: '9px', borderRadius: '12px',
+                        fontWeight: 800, fontSize: '0.82rem', cursor: 'pointer'
+                      }}
+                    >
+                      {done ? 'Klaim di Journey Studio' : 'Lanjutkan Challenge →'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
         {/* Left: Package Explorer */}
@@ -323,19 +460,6 @@ export const ProviderDashboard = () => {
   const [packages, setPackages] = useState([])
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [editingId, setEditingId] = useState(null)
-  const [formData, setFormData] = useState({
-    title: '',
-    location: '',
-    description: '',
-    duration: '',
-    price: '',
-    quota: '',
-    image_url: '',
-    latitude: '',
-    longitude: ''
-  })
-  const [uploading, setUploading] = useState(false)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
   const navigate = useNavigate()
 
@@ -364,86 +488,6 @@ export const ProviderDashboard = () => {
     } catch (err) {
       console.error('Error fetching data:', err)
       setLoading(false)
-    }
-  }
-
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    setUploading(true)
-    const data = new FormData()
-    data.append('image', file)
-
-    try {
-      const token = localStorage.getItem('token')
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/upload`, data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`
-        }
-      })
-      setFormData({ ...formData, image_url: response.data.image_url })
-      setUploading(false)
-    } catch (err) {
-      alert('Upload failed')
-      setUploading(false)
-    }
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const token = localStorage.getItem('token')
-    try {
-      if (editingId) {
-        await axios.put(`${import.meta.env.VITE_API_URL}/packages/${editingId}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        alert('Paket berhasil diperbarui')
-      } else {
-        await axios.post(`${import.meta.env.VITE_API_URL}/packages`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        alert('Paket berhasil ditambahkan')
-      }
-      setEditingId(null)
-      setFormData({ title: '', location: '', description: '', duration: '', price: '', quota: '', image_url: '', latitude: '', longitude: '' })
-      fetchData()
-    } catch (err) {
-      alert('Gagal menyimpan paket')
-    }
-  }
-
-  const handleEdit = (pkg) => {
-    setEditingId(pkg.id)
-    setFormData({
-      title: pkg.title,
-      location: pkg.location,
-      description: pkg.description,
-      duration: pkg.duration,
-      price: pkg.price,
-      quota: pkg.quota,
-      image_url: pkg.image_url,
-      latitude: pkg.latitude || '',
-      longitude: pkg.longitude || ''
-    })
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Apakah Anda yakin ingin menghapus paket ini?')) return
-    const token = localStorage.getItem('token')
-    try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/packages/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      fetchData()
-    } catch (err) {
-      alert('Gagal menghapus paket')
     }
   }
 
@@ -497,9 +541,8 @@ export const ProviderDashboard = () => {
         ))}
       </div>
 
-      {/* Booking + Form Row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '24px', marginBottom: '28px' }}>
-        {/* Incoming Bookings */}
+      {/* Bookings (main) */}
+      <div style={{ marginBottom: '28px' }}>
         <div className="db-section">
           <div className="db-section-head">
             <div>
@@ -574,98 +617,49 @@ export const ProviderDashboard = () => {
             )}
           </div>
         </div>
-
-        {/* Package Form */}
-        <div className="db-section">
-          <div className="db-section-head">
-            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>
-              {editingId ? 'Edit Paket' : 'Tambah Paket Baru'}
-            </div>
-          </div>
-          <div style={{ padding: '20px 24px' }}>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Judul Paket</label>
-                <input type="text" name="title" value={formData.title} onChange={handleInputChange} required className="input" placeholder="e.g. Ritual Kejawen Yogyakarta" />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Lokasi</label>
-                  <input type="text" name="location" value={formData.location} onChange={handleInputChange} required className="input" placeholder="Kota/Daerah" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Durasi</label>
-                  <input type="text" name="duration" value={formData.duration} onChange={handleInputChange} required className="input" placeholder="e.g. 3H 2M" />
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Harga (Rp)</label>
-                  <input type="number" name="price" value={formData.price} onChange={handleInputChange} required className="input" />
-                </div>
-                <div className="form-group" style={{ marginBottom: 0 }}>
-                  <label className="form-label">Kuota</label>
-                  <input type="number" name="quota" value={formData.quota} onChange={handleInputChange} required className="input" />
-                </div>
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Deskripsi</label>
-                <textarea name="description" value={formData.description} onChange={handleInputChange} className="input" rows="2" style={{ resize: 'none' }} placeholder="Deskripsi singkat paket..." />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Gambar Paket</label>
-                <input type="file" onChange={handleFileUpload} accept="image/*" style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }} />
-                {uploading && <p style={{ fontSize: '0.72rem', color: 'var(--primary)', marginTop: '4px' }}>Mengunggah...</p>}
-              </div>
-              <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-                {editingId ? 'Simpan Perubahan' : 'Publish Paket'}
-              </button>
-              {editingId && (
-                <button type="button" onClick={() => { setEditingId(null); setFormData({ title: '', location: '', description: '', duration: '', price: '', quota: '', image_url: '', latitude: '', longitude: '' }) }} className="btn btn-ghost" style={{ width: '100%' }}>
-                  Batal Edit
-                </button>
-              )}
-            </form>
-          </div>
-        </div>
       </div>
 
-      {/* Package Catalog */}
+      {/* Package preview + CTA to dedicated page */}
       <div className="db-section">
         <div className="db-section-head">
-          <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>Katalog Paket Saya</div>
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-gray)' }}>{packages.length} paket aktif</span>
+          <div>
+            <div style={{ fontFamily: 'var(--font-serif)', fontWeight: 700, fontSize: '1.05rem' }}>Paket Terbaru Anda</div>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-gray)', marginTop: '2px' }}>{packages.length} paket aktif · ringkasan 4 terakhir</div>
+          </div>
+          <button onClick={() => navigate('/provider/packages')} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '0.82rem' }}>
+            Kelola Paket →
+          </button>
         </div>
         <div style={{ padding: '16px' }}>
-          {packages.length === 0 ? (
-            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-gray)' }}>Belum ada paket. Tambahkan paket pertama Anda di atas.</p>
+          {loading ? (
+            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-gray)' }}>Memuat...</p>
+          ) : packages.length === 0 ? (
+            <div style={{ padding: '32px', textAlign: 'center' }}>
+              <div style={{ fontSize: '2.4rem', marginBottom: '10px' }}>🗺️</div>
+              <p style={{ color: 'var(--text-gray)', marginBottom: '14px' }}>Belum ada paket. Mulai dengan menambah paket pertama Anda.</p>
+              <button onClick={() => navigate('/provider/packages')} className="btn btn-primary" style={{ padding: '8px 20px' }}>
+                Tambah Paket
+              </button>
+            </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '14px' }}>
-              {packages.map(pkg => (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '14px' }}>
+              {packages.slice(0, 4).map(pkg => (
                 <div key={pkg.id} style={{
-                  display: 'flex',
-                  gap: '14px',
-                  alignItems: 'center',
-                  padding: '14px',
                   background: 'var(--bg-surface)',
                   borderRadius: '14px',
-                  border: '1px solid var(--border-light)'
+                  border: '1px solid var(--border-light)',
+                  overflow: 'hidden'
                 }}>
                   <img
-                    src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=120&q=70'}
+                    src={pkg.image_url || 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70'}
                     alt={pkg.title}
-                    style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '10px', flexShrink: 0 }}
+                    style={{ width: '100%', height: '110px', objectFit: 'cover' }}
+                    onError={(e) => { e.target.onerror = null; e.target.src = 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=400&q=70' }}
                   />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: '0.9rem', marginBottom: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pkg.title}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-light)', marginBottom: '6px' }}>📍 {pkg.location} | 👥 {pkg.quota} pax</div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '0.9rem' }}>Rp {pkg.price.toLocaleString('id-ID')}</span>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <button onClick={() => handleEdit(pkg)} className="btn btn-outline" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>Edit</button>
-                        <button onClick={() => handleDelete(pkg.id)} className="btn btn-danger" style={{ padding: '3px 8px', fontSize: '0.7rem' }}>Hapus</button>
-                      </div>
-                    </div>
+                  <div style={{ padding: '10px 12px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '0.86rem', marginBottom: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pkg.title}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-light)', marginBottom: '6px' }}>📍 {pkg.location}</div>
+                    <div style={{ fontWeight: 800, color: 'var(--secondary)', fontSize: '0.88rem' }}>Rp {Number(pkg.price || 0).toLocaleString('id-ID')}</div>
                   </div>
                 </div>
               ))}

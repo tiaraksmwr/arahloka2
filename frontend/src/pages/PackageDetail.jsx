@@ -32,9 +32,7 @@ const PackageDetail = () => {
         const response = await axios.get(`${import.meta.env.VITE_API_URL}/packages/${id}`)
         setPkg(response.data)
         setLoading(false)
-        if (response.data.latitude && response.data.longitude) {
-          fetchWeather(response.data.latitude, response.data.longitude)
-        }
+        fetchWeather(response.data)
       } catch (err) {
         console.error('Error fetching package:', err)
         setLoading(false)
@@ -43,10 +41,15 @@ const PackageDetail = () => {
     fetchPackage()
   }, [id])
 
-  const fetchWeather = async (lat, lon) => {
+  const fetchWeather = async (pkgData) => {
+    if (!pkgData) return
     setWeatherLoading(true)
     try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/weather?lat=${lat}&lon=${lon}`)
+      const hasCoords = pkgData.latitude && pkgData.longitude
+      const query = hasCoords
+        ? `lat=${pkgData.latitude}&lon=${pkgData.longitude}`
+        : `location=${encodeURIComponent(pkgData.location || '')}`
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/weather?${query}`)
       setWeather(response.data)
     } catch (err) {
       console.error('Error fetching weather:', err)

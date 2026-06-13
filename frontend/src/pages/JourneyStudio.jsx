@@ -29,25 +29,48 @@ const StarRating = ({ rating, setRating, editable = true }) => (
 const JourneyStudio = () => {
   const [activeTab, setActiveTab] = useState('memory')
   const [userBookings, setUserBookings] = useState([])
+  const [memoryCount, setMemoryCount] = useState(0)
+  const [storyCount, setStoryCount] = useState(0)
   const user = JSON.parse(localStorage.getItem('user') || '{}')
 
   useEffect(() => {
     if (user.id && user.role === 'tourist') {
-      fetchUserBookings()
+      fetchAll()
     }
   }, [user.id])
 
-  const fetchUserBookings = async () => {
+  const fetchAll = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/bookings/my`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      setUserBookings(response.data)
+      const headers = { Authorization: `Bearer ${token}` }
+      const [bRes, mRes, sRes] = await Promise.all([
+        axios.get(`${import.meta.env.VITE_API_URL}/bookings/my`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/memory-cards/my`, { headers }),
+        axios.get(`${import.meta.env.VITE_API_URL}/story-challenges`)
+      ])
+      setUserBookings(bRes.data)
+      setMemoryCount(mRes.data.length)
+      setStoryCount(sRes.data.filter(s => s.user_id === user.id).length)
     } catch (err) {
-      console.error('Error fetching bookings:', err)
+      console.error('Error fetching journey data:', err)
     }
   }
+
+  const completedTrips = userBookings.filter(b => b.completed_at).length
+  const totalPoints = completedTrips * 30 + memoryCount * 10 + storyCount * 20
+
+  // Badge tiers based on activity
+  const badge = totalPoints >= 250 ? { name: 'Maestro Budaya', icon: '👑', color: '#f59e0b' }
+              : totalPoints >= 100 ? { name: 'Penjelajah Aktif', icon: '🧭', color: '#06b6d4' }
+              : totalPoints >= 30 ? { name: 'Pemula Antusias', icon: '🌱', color: '#10b981' }
+              : { name: 'Calon Penjelajah', icon: '✨', color: '#94a3b8' }
+
+  const heroStats = [
+    { label: 'Trip Selesai', value: completedTrips, icon: '🧳' },
+    { label: 'Memory Card', value: memoryCount, icon: '📸' },
+    { label: 'Kisah Dibagikan', value: storyCount, icon: '📖' },
+    { label: 'Poin Penjelajah', value: totalPoints, icon: '⭐' }
+  ]
 
   return (
     <DashboardLayout
@@ -55,12 +78,78 @@ const JourneyStudio = () => {
       subtitle="Simpan kenangan perjalanan budaya Anda dan bagikan kisah autentik bersama komunitas penjelajah nusantara."
       role={user.role}
     >
+      {/* Hero */}
+      <div style={{
+        position: 'relative',
+        borderRadius: '24px',
+        padding: '28px 32px',
+        marginBottom: '24px',
+        background: 'linear-gradient(135deg, #b8501c 0%, #6b2c0c 100%)',
+        color: 'white',
+        overflow: 'hidden',
+        boxShadow: 'var(--shadow-card)'
+      }}>
+        <div style={{
+          position: 'absolute', top: '-40px', right: '-40px',
+          width: '220px', height: '220px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.08)'
+        }} />
+        <div style={{
+          position: 'absolute', bottom: '-60px', right: '120px',
+          width: '160px', height: '160px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.05)'
+        }} />
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '24px', flexWrap: 'wrap', position: 'relative' }}>
+          <div style={{ flex: '1 1 320px' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '1.2px', opacity: 0.8, textTransform: 'uppercase', marginBottom: '6px' }}>
+              Halo, {user.name?.split(' ')[0] || 'Penjelajah'} 👋
+            </div>
+            <h2 style={{ color: 'white', fontFamily: 'var(--font-serif)', fontSize: '1.7rem', margin: '0 0 8px', lineHeight: 1.2 }}>
+              Rekam jejak budaya Anda di Nusantara
+            </h2>
+            <p style={{ fontSize: '0.92rem', opacity: 0.88, lineHeight: 1.65, marginBottom: '14px', maxWidth: '480px' }}>
+              Abadikan momen berkesan, bagikan kisah unik, dan kumpulkan poin untuk mendapatkan hadiah eksklusif dari komunitas ArahLoka.
+            </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '8px',
+              background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)',
+              padding: '8px 16px', borderRadius: '999px',
+              border: '1px solid rgba(255,255,255,0.3)',
+              fontWeight: 700, fontSize: '0.86rem'
+            }}>
+              <span style={{ fontSize: '1.05rem' }}>{badge.icon}</span>
+              <span>Tier: {badge.name}</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', minWidth: '260px' }}>
+            {heroStats.map(s => (
+              <div key={s.label} style={{
+                background: 'rgba(255,255,255,0.13)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '14px',
+                padding: '12px 14px'
+              }}>
+                <div style={{ fontSize: '0.66rem', fontWeight: 800, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  <span style={{ marginRight: '4px' }}>{s.icon}</span>{s.label}
+                </div>
+                <div style={{ fontSize: '1.7rem', fontWeight: 900, fontFamily: 'var(--font-serif)', lineHeight: 1.1 }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
         <div className="studio-tabs">
           {[
-            { id: 'memory', label: 'Memory Lane', icon: '📸' },
-            { id: 'story', label: 'Community Story', icon: '📖' }
+            { id: 'memory', label: 'Memory Lane', icon: '📸', count: memoryCount },
+            { id: 'story', label: 'Community Story', icon: '📖', count: storyCount }
           ].map(tab => (
             <button
               key={tab.id}
@@ -68,6 +157,12 @@ const JourneyStudio = () => {
               className={`studio-tab ${activeTab === tab.id ? 'active' : ''}`}
             >
               <span>{tab.icon}</span> {tab.label}
+              <span style={{
+                marginLeft: '6px',
+                background: activeTab === tab.id ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.06)',
+                padding: '1px 8px', borderRadius: '999px',
+                fontSize: '0.7rem', fontWeight: 800
+              }}>{tab.count}</span>
             </button>
           ))}
         </div>
@@ -75,14 +170,14 @@ const JourneyStudio = () => {
 
       {/* Content */}
       <div className="animate-fade-in">
-        {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} />}
-        {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} />}
+        {activeTab === 'memory' && <MemoryLane user={user} bookings={userBookings} onSaved={fetchAll} />}
+        {activeTab === 'story' && <StoryChallenge user={user} bookings={userBookings} onSaved={fetchAll} />}
       </div>
     </DashboardLayout>
   )
 }
 
-const MemoryLane = ({ user, bookings }) => {
+const MemoryLane = ({ user, bookings, onSaved }) => {
   const [form, setForm] = useState({ booking_id: '', destination: '', title: '', rating: 5, content: '' })
   const [imageFile, setImageFile] = useState(null)
   const [myCards, setMyCards] = useState([])
@@ -143,6 +238,7 @@ const MemoryLane = ({ user, bookings }) => {
       setForm({ booking_id: '', destination: '', title: '', rating: 5, content: '' })
       setImageFile(null)
       fetchMyCards()
+      onSaved && onSaved()
     } catch (err) {
       alert('Gagal menyimpan memory card')
     } finally {
@@ -258,7 +354,7 @@ const MemoryLane = ({ user, bookings }) => {
   )
 }
 
-const StoryChallenge = ({ user, bookings }) => {
+const StoryChallenge = ({ user, bookings, onSaved }) => {
   const [form, setForm] = useState({ booking_id: '', destination: '', title: '', content: '', rating: 5 })
   const [imageFile, setImageFile] = useState(null)
   const [stories, setStories] = useState([])
@@ -312,6 +408,7 @@ const StoryChallenge = ({ user, bookings }) => {
       setForm({ booking_id: '', destination: '', title: '', content: '', rating: 5 })
       setImageFile(null)
       fetchStories()
+      onSaved && onSaved()
     } catch (err) {
       alert('Gagal mengirim cerita')
     } finally {
